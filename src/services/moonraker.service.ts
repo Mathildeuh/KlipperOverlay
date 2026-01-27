@@ -7,6 +7,7 @@ class MoonrakerService {
   private wsConnection: WebSocket | null = null;
   private wsReconnectTimer: NodeJS.Timeout | null = null;
   private lastStatus: PrinterStatus | null = null;
+  private metadataCache: Map<string, { data: any; timestamp: number }> = new Map();
 
   constructor() {
     this.initWebSocket();
@@ -26,6 +27,7 @@ class MoonrakerService {
             print_stats: '',
             display_status: '',
             virtual_sdcard: '',
+            gcode_metadata: '',
           },
           timeout: 5000,
         }
@@ -33,14 +35,37 @@ class MoonrakerService {
 
       const status = response.data.result.status;
       
-      // Calcul du temps restant (estimation basique)
+      // Calcul du temps restant
       let timeRemaining: number | null = null;
-      if (status.print_stats && status.virtual_sdcard) {
+      let totalEstimated: number | null = null;
+
+      // Essayer de récupérer le temps estimé total depuis les métadonnées
+      if (status.print_stats?.filename) {
+        const metadata = await this.getFileMetadata(status.print_stats.filename);
+        if (metadata?.estimated_time) {
+          totalEstimated = metadata.estimated_time;
+        }
+      }
+
+      // Sinon utiliser le calcul basique
+      if (!totalEstimated && status.print_stats && status.virtual_sdcard) {
         const progress = status.virtual_sdcard.progress || 0;
         const duration = status.print_stats.print_duration || 0;
         if (progress > 0 && progress < 1) {
-          timeRemaining = Math.round((duration / progress) - duration);
+          totalEstimated = Math.round(duration / progress);
         }
+      }
+
+      // Calculer le temps restant
+      if (totalEstimated && status.print_stats?.print_duration) {
+        timeRemaining = Math.round(totalEstimated - status.print_stats.print_duration);
+        if (timeRemaining < 0) timeRemaining = 0;
+      }
+
+      // Récupération du thumbnail
+      let thumbnail: string | null = null;
+      if (status.print_stats?.filename) {
+        thumbnail = await this.getThumbnail(status.print_stats.filename);
       }
 
       const printerStatus: PrinterStatus = {
@@ -53,6 +78,7 @@ class MoonrakerService {
         bedTarget: status.heater_bed?.target || 0,
         timeRemaining,
         printDuration: status.print_stats?.print_duration || null,
+        thumbnail,
         timestamp: Date.now(),
       };
 
@@ -74,9 +100,83 @@ class MoonrakerService {
         bedTarget: 0,
         timeRemaining: null,
         printDuration: null,
+        thumbnail: null,
         timestamp: Date.now(),
       };
     }
+  }
+
+  /**
+   * Récupère les métadonnées d'un fichier gcode (avec cache 30s)
+   */
+  private async getFileMetadata(filename: string): Promise<any | null> {
+    try {
+      const now = Date.now();
+      
+      // Vérifier le cache (30 secondes)
+      const cached = this.metadataCache.get(filename);
+      if (cached && now - cached.timestamp < 30000) {
+        return cached.data;
+      }
+
+      const encodedFilename = encodeURIComponent(filename);
+      const response = await axios.get(
+        `${config.moonraker.url}/server/files/metadata?filename=${encodedFilename}`,
+        { timeout: 3000 }
+      );
+
+      const result = response.data?.result || null;
+      
+      // Cacher le résultat
+      if (result) {
+        this.metadataCache.set(filename, { data: result, timestamp: now });
+      }
+      
+      return result;
+    } catch (error) {
+      // Métadonnées non disponibles
+      return null;
+    }
+  }
+
+  /**
+   * Récupère le thumbnail d'un fichier gcode
+   */
+  private async getThumbnail(filename: string): Promise<string | null> {
+    try {
+      // Utiliser les métadonnées déjà en cache
+      const metadata = this.metadataCache.get(filename)?.data || 
+                       await this.getFileMetadata(filename);
+      
+      if (!metadata?.thumbnails || metadata.thumbnails.length === 0) {
+        return null;
+      }
+
+      // Préférer la plus grande image (généralement la dernière)
+      const thumbnail = metadata.thumbnails[metadata.thumbnails.length - 1];
+      
+      // Si le thumbnail est en base64 (data:image/...)
+      if (thumbnail.data) {
+        return thumbnail.data;
+      }
+      
+      // Si c'est une URL relative (format standard Moonraker)
+      // relative_path est relatif au dossier du fichier gcode
+      if (thumbnail.relative_path) {
+        // Extraire le dossier du fichier
+        const filePath = filename.substring(0, filename.lastIndexOf('/') + 1);
+        const thumbPath = `${filePath}${thumbnail.relative_path}`;
+        const encodedThumbPath = encodeURIComponent(thumbPath);
+        return `${config.moonraker.url}/server/files/gcodes/${encodedThumbPath}`;
+      }
+    } catch (error) {
+      // Thumbnail non disponible, ce n'est pas une erreur
+      if (axios.isAxiosError(error)) {
+        console.log(`⚠️ Pas de thumbnail pour: ${filename}`);
+      }
+    }
+    
+    return null;
   }
 
   /**

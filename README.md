@@ -9,15 +9,19 @@ Serveur local Node.js pour afficher les informations d'une imprimante 3D Klipper
 ## 📋 Fonctionnalités
 
 - ✅ **Overlay temps réel** pour OBS avec fond transparent
+- ✅ **Thumbnail du print** en cours (prévisualisation du modèle)
 - ✅ **Affichage des températures** (buse, plateau)
-- ✅ **État de l'impression** (printing, paused, idle)
+- ✅ **État de l'impression** (impression, pause, inactif)
 - ✅ **Progression en pourcentage** avec barre visuelle
 - ✅ **Nom du fichier** en cours d'impression
-- ✅ **Temps écoulé et restant** estimé
+- ✅ **Temps écoulé et restant** estimé (basé sur les métadonnées du sliceur)
 - ✅ **API REST** pour interrogation JSON
 - ✅ **Auto-reconnexion** si Moonraker déconnecté
-- ✅ **WebSocket** optionnel pour updates temps réel
+- ✅ **WebSocket** pour updates temps réel
 - ✅ **Paramètres d'affichage** via URL (scale, position, compact)
+- ✅ **Complètement en français** 🇫🇷
+- ✅ **Systemd service** inclus pour auto-démarrage
+- ✅ **Docker support** avec docker-compose
 
 ## 🚀 Installation
 
@@ -130,12 +134,13 @@ Retourne le status actuel de l'imprimante.
     "bedTarget": 60,
     "timeRemaining": 3600,
     "printDuration": 2400,
+    "thumbnail": "http://192.168.1.155:7125/server/files/gcodes/.thumbs/benchy-300x300.png",
     "timestamp": 1706345678901
   }
 }
 ```
 
-**États possibles :** `printing`, `paused`, `idle`, `error`, `disconnected`
+**États possibles :** `impression`, `pause`, `inactif`, `erreur`, `déconnecté`
 
 ### GET `/api/health`
 
@@ -169,28 +174,46 @@ docker run -d \
   klipper-overlay
 ```
 
-### Avec docker-compose
+### Avec docker-compose (recommandé)
 
-Créer un fichier `docker-compose.yml` :
+Le projet inclut un fichier `docker-compose.yml` pré-configuré :
 
-```yaml
-version: '3.8'
-
-services:
-  klipper-overlay:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - MOONRAKER_URL=http://192.168.1.155:7125
-      - PORT=8080
-      - CORS_ENABLED=true
-    restart: unless-stopped
-```
-
-Lancer :
 ```bash
 docker-compose up -d
+```
+
+Arrêter :
+```bash
+docker-compose down
+```
+
+## 🔧 Service Systemd (auto-démarrage)
+
+Le projet inclut un service systemd pour lancer l'overlay automatiquement au démarrage.
+
+### Installation du service
+
+```bash
+sudo cp /root/KlipperOverlay/KlipperOverlay.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable KlipperOverlay.service
+sudo systemctl start KlipperOverlay.service
+```
+
+### Gérer le service
+
+```bash
+# Vérifier le statut
+sudo systemctl status KlipperOverlay.service
+
+# Voir les logs en temps réel
+sudo journalctl -u KlipperOverlay.service -f
+
+# Redémarrer
+sudo systemctl restart KlipperOverlay.service
+
+# Arrêter
+sudo systemctl stop KlipperOverlay.service
 ```
 
 ## 🛠️ Scripts npm disponibles
@@ -210,19 +233,21 @@ klipper-overlay/
 │   ├── index.ts                    # Serveur Express principal
 │   ├── config.ts                   # Configuration (.env)
 │   ├── services/
-│   │   └── moonraker.service.ts    # Service API Moonraker
+│   │   └── moonraker.service.ts    # Service API Moonraker (avec cache thumbnail)
 │   ├── routes/
 │   │   └── api.routes.ts           # Routes API REST
 │   └── types/
 │       └── index.ts                # Types TypeScript
 ├── public/
-│   ├── overlay.html                # Page overlay OBS
-│   ├── overlay.css                 # Styles
-│   └── overlay.js                  # Script client
+│   ├── overlay.html                # Page overlay OBS (avec thumbnail)
+│   ├── overlay.css                 # Styles (responsive, animations)
+│   └── overlay.js                  # Script client (polling 1x/sec)
 ├── package.json
 ├── tsconfig.json
 ├── .env.example
-├── Dockerfile
+├── Dockerfile                      # Build multi-stage optimisé
+├── docker-compose.yml              # Orchestration Docker
+├── KlipperOverlay.service          # Service systemd
 └── README.md
 ```
 
@@ -274,11 +299,22 @@ Pour accéder à l'overlay depuis un autre appareil :
    CORS_ENABLED=true
    ```
 
-## 📝 Notes
+## 📝 Notes techniques
 
-- Le serveur interroge Moonraker toutes les secondes par défaut
-- Les connexions WebSocket sont automatiquement réessayées en cas d'échec
-- L'overlay continue de fonctionner même si l'imprimante est éteinte (affiche "Déconnecté")
+- 🔄 Le serveur interroge Moonraker **toutes les secondes** pour les updates
+- 🖼️ Les thumbnails sont **cachés 30 secondes** pour éviter les requêtes répétées
+- ⏱️ Le **temps restant** est calculé à partir de l'estimation du sliceur (métadonnées gcode)
+- 🔌 Les connexions WebSocket se **reconnectent automatiquement** en cas d'échec
+- 💾 L'overlay continue de **fonctionner hors-ligne** (affiche "Déconnecté")
+- 🌐 **CORS** activé par défaut pour accès depuis le réseau
+- 📱 **Responsive** : fonctionne sur mobile/tablette/bureau
+
+## 🎯 Cas d'usage
+
+- 📹 **Streaming OBS** : affiche l'état de l'impression en direct
+- 🖥️ **Dashboard local** : page de statut accessible depuis n'importe quel navigateur
+- 📊 **API tiers** : intégration avec Home Assistant, Node-RED, etc.
+- 🔔 **Webhooks** : extensible pour notifications
 
 ## 📄 Licence
 
@@ -296,4 +332,5 @@ Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou un
 
 ---
 
-**Fait avec ❤️ pour la communauté Klipper**
+**Fait avec ❤️ pour la communauté Klipper** 🖨️
+

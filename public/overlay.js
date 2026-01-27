@@ -29,6 +29,8 @@ const elements = {
   bedTarget: document.getElementById('bed-target'),
   duration: document.getElementById('duration'),
   remaining: document.getElementById('remaining'),
+  thumbnail: document.getElementById('thumbnail'),
+  thumbnailContainer: document.getElementById('thumbnail-container'),
 };
 
 // Fonction pour formater le temps en HH:MM:SS
@@ -81,13 +83,21 @@ function updateUI(data) {
   // Temps
   elements.duration.textContent = formatTime(status.printDuration);
   elements.remaining.textContent = formatTime(status.timeRemaining);
+
+  // Thumbnail
+  if (status.thumbnail) {
+    elements.thumbnail.src = status.thumbnail;
+    elements.thumbnail.style.display = 'block';
+  } else {
+    elements.thumbnail.style.display = 'none';
+  }
 }
 
 // État déconnecté
 function setDisconnected() {
   elements.connectionStatus.className = 'disconnected';
   elements.statusText.textContent = 'Déconnecté';
-  elements.state.textContent = 'Disconnected';
+  elements.state.textContent = 'Déconnecté';
   elements.state.className = 'value state-disconnected';
 }
 
@@ -107,7 +117,13 @@ function getStateLabel(state) {
 async function fetchStatus() {
   try {
     const response = await fetch('/api/status');
+    if (!response.ok) {
+      console.error('Erreur API:', response.status, response.statusText);
+      setDisconnected();
+      return;
+    }
     const data = await response.json();
+    console.log('Status reçu:', data);
     updateUI(data);
   } catch (error) {
     console.error('Erreur lors de la récupération du status:', error);
@@ -116,9 +132,11 @@ async function fetchStatus() {
 }
 
 // Polling toutes les secondes
+console.log('🚀 Démarrage du polling...');
 fetchStatus();
 setInterval(fetchStatus, 1000);
 
 // Log au chargement
-console.log('Klipper Overlay chargé');
-console.log('Paramètres:', { scale, compact, position });
+console.log('✅ Klipper Overlay chargé');
+console.log('📍 URL base:', window.location.origin);
+console.log('🔧 Paramètres:', { scale, compact, position });

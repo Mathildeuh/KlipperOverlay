@@ -14,12 +14,17 @@
       <span class="status-text">Connexion...</span>
     </div>
 
+    <!-- Thumbnail du print -->
+    <div id="thumbnail-container">
+      <img id="thumbnail" src="" alt="Print preview" style="display: none;">
+    </div>
+
     <!-- Informations principales -->
     <div id="main-info">
       <!-- État de l'impression -->
       <div class="info-row state-row">
         <span class="label">État:</span>
-        <span class="value" id="state">Idle</span>
+        <span class="value" id="state">Inactif</span>
       </div>
 
       <!-- Fichier -->
@@ -53,7 +58,7 @@
         <div class="temp-item">
           <div class="temp-icon">🛏️</div>
           <div class="temp-info">
-            <div class="temp-label">Bed</div>
+            <div class="temp-label">Plateau</div>
             <div class="temp-value">
               <span id="bed-temp">0</span>°C / 
               <span id="bed-target">0</span>°C

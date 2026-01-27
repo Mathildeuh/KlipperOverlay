@@ -8,6 +8,7 @@ export interface PrinterStatus {
   bedTarget: number;
   timeRemaining: number | null; // en secondes
   printDuration: number | null; // en secondes
+  thumbnail: string | null; // URL du thumbnail
   timestamp: number;
 }
 

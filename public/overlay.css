@@ -21,6 +21,27 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
   min-width: 350px;
   max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Thumbnail */
+#thumbnail-container {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#thumbnail {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 120px;
+  object-fit: contain;
 }
 
 /* Status de connexion */
@@ -167,7 +188,6 @@ body {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.6);
   font-weight: 600;
-  text-transform: uppercase;
 }
 
 .temp-value {
