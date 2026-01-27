@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klipper Overlay</title>
+  <link rel="stylesheet" href="/overlay.css">
+</head>
+<body>
+  <div id="overlay-container">
+    <!-- Status de connexion -->
+    <div id="connection-status" class="disconnected">
+      <span class="status-dot"></span>
+      <span class="status-text">Connexion...</span>
+    </div>
+
+    <!-- Informations principales -->
+    <div id="main-info">
+      <!-- État de l'impression -->
+      <div class="info-row state-row">
+        <span class="label">État:</span>
+        <span class="value" id="state">Idle</span>
+      </div>
+
+      <!-- Fichier -->
+      <div class="info-row">
+        <span class="label">Fichier:</span>
+        <span class="value filename" id="filename">-</span>
+      </div>
+
+      <!-- Progression -->
+      <div class="info-row progress-row">
+        <span class="label">Progression:</span>
+        <span class="value" id="progress">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <!-- Températures -->
+      <div class="temps-container">
+        <div class="temp-item">
+          <div class="temp-icon">🔥</div>
+          <div class="temp-info">
+            <div class="temp-label">Buse</div>
+            <div class="temp-value">
+              <span id="extruder-temp">0</span>°C / 
+              <span id="extruder-target">0</span>°C
+            </div>
+          </div>
+        </div>
+
+        <div class="temp-item">
+          <div class="temp-icon">🛏️</div>
+          <div class="temp-info">
+            <div class="temp-label">Bed</div>
+            <div class="temp-value">
+              <span id="bed-temp">0</span>°C / 
+              <span id="bed-target">0</span>°C
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Temps -->
+      <div class="time-container">
+        <div class="time-item">
+          <span class="time-label">⏱️ Durée:</span>
+          <span class="time-value" id="duration">00:00:00</span>
+        </div>
+        <div class="time-item">
+          <span class="time-label">⏳ Restant:</span>
+          <span class="time-value" id="remaining">--:--:--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/overlay.js"></script>
+</body>
+</html>

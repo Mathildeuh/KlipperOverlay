@@ -1,0 +1,249 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: transparent;
+  color: #fff;
+  font-size: 14px;
+  overflow: hidden;
+}
+
+#overlay-container {
+  background: rgba(0, 0, 0, 1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 350px;
+  max-width: 450px;
+}
+
+/* Status de connexion */
+#connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+#connection-status.connected {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+#connection-status.disconnected {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+#connection-status.connected .status-dot {
+  background: #22c55e;
+}
+
+#connection-status.disconnected .status-dot {
+  background: #ef4444;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Info principale */
+#main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.label {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.value {
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* État */
+.state-row .value {
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.state-printing { background: rgba(34, 197, 94, 0.3); color: #22c55e; }
+.state-paused { background: rgba(251, 191, 36, 0.3); color: #fbbf24; }
+.state-idle { background: rgba(59, 130, 246, 0.3); color: #3b82f6; }
+.state-error { background: rgba(239, 68, 68, 0.3); color: #ef4444; }
+.state-disconnected { background: rgba(107, 114, 128, 0.3); color: #6b7280; }
+
+/* Fichier */
+.filename {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+/* Barre de progression */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #22c55e);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+/* Températures */
+.temps-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.temp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.temp-icon {
+  font-size: 24px;
+}
+
+.temp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.temp-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.temp-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+}
+
+/* Temps */
+.time-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.time-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.time-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+.time-value {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  color: #3b82f6;
+}
+
+/* Mode compact (via ?compact=1) */
+body.compact #overlay-container {
+  padding: 12px;
+  min-width: 280px;
+}
+
+body.compact .info-row {
+  padding: 4px 0;
+}
+
+body.compact .temp-item,
+body.compact .time-item {
+  padding: 8px;
+}
+
+/* Positions (via ?pos=...) */
+body.pos-top-left #overlay-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+}
+
+body.pos-top-right #overlay-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+}
+
+body.pos-bottom-left #overlay-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+}
+
+body.pos-bottom-right #overlay-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+}
