@@ -4,6 +4,19 @@ const scale = parseFloat(urlParams.get('scale') || '1.0');
 const compact = urlParams.get('compact') === '1';
 const position = urlParams.get('pos') || '';
 
+// Paramètres pour afficher/masquer les blocs
+const urlConfig = {
+  showThumbnail: urlParams.get('thumbnail') !== '0',
+  showFilename: urlParams.get('file') !== '0',
+  showProgress: urlParams.get('progress_bar') !== '0',
+  showState: urlParams.get('state') !== '0',
+  showNozzle: urlParams.get('nozzle') !== '0',
+  showBed: urlParams.get('bed') !== '0',
+  showTimer: urlParams.get('timer') !== '0',
+  showEta: urlParams.get('eta') !== '0',
+  showStatus: urlParams.get('status') !== '0',
+};
+
 // Appliquer les paramètres
 if (scale !== 1.0) {
   document.getElementById('overlay-container').style.transform = `scale(${scale})`;
@@ -42,6 +55,11 @@ let overlayConfig = {
   showTemperatures: true,
   showTimes: true,
   showStatus: true,
+  showState: true,
+  showNozzle: true,
+  showBed: true,
+  showTimer: true,
+  showEta: true,
 };
 
 // Fonction pour formater le temps en HH:MM:SS
@@ -63,23 +81,34 @@ async function loadConfig() {
       const data = await response.json();
       overlayConfig = { ...overlayConfig, ...data.data };
       console.log('✅ Configuration chargée:', overlayConfig);
+      
+      // Appliquer les paramètres URL (priorité sur l'API)
+      Object.keys(urlConfig).forEach(key => {
+        overlayConfig[key] = urlConfig[key];
+      });
+      console.log('📍 Configuration avec paramètres URL appliquée:', overlayConfig);
+      
       applyConfig();
     }
   } catch (error) {
     console.log('⚠️ Impossible de charger la configuration, utilisation des valeurs par défaut');
+    // Appliquer juste les paramètres URL
+    Object.keys(urlConfig).forEach(key => {
+      overlayConfig[key] = urlConfig[key];
+    });
+    applyConfig();
   }
 }
 
 // Appliquer la configuration (afficher/masquer les blocs)
 function applyConfig() {
-  const mainInfo = elements.mainInfo;
-  
-  // Afficher/masquer les sections
+  // Thumbnail
   const thumbnailSection = elements.thumbnailContainer?.parentElement;
   if (thumbnailSection) thumbnailSection.style.display = overlayConfig.showThumbnail ? '' : 'none';
   
-  // On peut améliorer ça en ajoutant des data-attributes ou des classes
-  // Pour l'instant, on cache les sections via CSS/JS dynamique
+  // État
+  const stateRow = document.querySelector('.state-row');
+  if (stateRow) stateRow.style.display = overlayConfig.showState ? '' : 'none';
 }
 
 // Fonction pour mettre à jour l'UI
@@ -103,8 +132,6 @@ function updateUI(data) {
   // État
   elements.state.textContent = getStateLabel(status.state);
   elements.state.className = `value state-${status.state}`;
-
-  // Fichier
   elements.filename.textContent = status.filename || 'Aucun';
   if (elements.filename.parentElement) {
     elements.filename.parentElement.parentElement.style.display = overlayConfig.showFilename ? '' : 'none';
@@ -116,22 +143,39 @@ function updateUI(data) {
   elements.progressFill.style.width = `${progressValue}%`;
   if (elements.progress.parentElement) {
     elements.progress.parentElement.parentElement.style.display = overlayConfig.showProgress ? '' : 'none';
-    elements.progress.parentElement.parentElement.nextElementSibling.style.display = overlayConfig.showProgress ? '' : 'none';
+    const progressBar = elements.progress.parentElement.parentElement.nextElementSibling;
+    if (progressBar) progressBar.style.display = overlayConfig.showProgress ? '' : 'none';
   }
 
-  // Températures
-  const tempsContainer = document.querySelector('.temps-container');
-  if (tempsContainer) tempsContainer.style.display = overlayConfig.showTemperatures ? '' : 'none';
+  // Températures - Buse
   elements.extruderTemp.textContent = Math.round(status.extruderTemp);
   elements.extruderTarget.textContent = Math.round(status.extruderTarget);
+  const nozzleItem = elements.extruderTemp.closest('.temp-item');
+  if (nozzleItem) nozzleItem.style.display = overlayConfig.showNozzle ? '' : 'none';
+
+  // Températures - Plateau
   elements.bedTemp.textContent = Math.round(status.bedTemp);
   elements.bedTarget.textContent = Math.round(status.bedTarget);
+  const bedItem = elements.bedTemp.closest('.temp-item');
+  if (bedItem) bedItem.style.display = overlayConfig.showBed ? '' : 'none';
 
   // Temps
   elements.duration.textContent = formatTime(status.printDuration);
   elements.remaining.textContent = formatTime(status.timeRemaining);
+  
+  // Affichage sélectif des temps
+  const timeItems = document.querySelectorAll('.time-item');
+  if (timeItems.length >= 2) {
+    timeItems[0].style.display = overlayConfig.showTimer ? '' : 'none';      // Durée
+    timeItems[1].style.display = overlayConfig.showEta ? '' : 'none';        // Restant
+  }
+  
+  // Masquer le conteneur si aucun temps n'est affiché
   const timeContainer = document.querySelector('.time-container');
-  if (timeContainer) timeContainer.style.display = overlayConfig.showTimes ? '' : 'none';
+  if (timeContainer) {
+    const showAnyTime = overlayConfig.showTimer || overlayConfig.showEta;
+    timeContainer.style.display = showAnyTime ? '' : 'none';
+  }
 
   // Thumbnail
   if (status.thumbnail && overlayConfig.showThumbnail) {
@@ -148,6 +192,11 @@ function setDisconnected() {
   elements.statusText.textContent = 'Déconnecté';
   elements.state.textContent = 'Déconnecté';
   elements.state.className = 'value state-disconnected';
+  
+  // Masquer la barre de statut si configuré
+  if (!overlayConfig.showStatus) {
+    elements.connectionStatus.style.display = 'none';
+  }
 }
 
 // Labels d'état
@@ -190,3 +239,4 @@ setInterval(fetchStatus, 1000);
 console.log('✅ Klipper Overlay chargé');
 console.log('📍 URL base:', window.location.origin);
 console.log('🔧 Paramètres:', { scale, compact, position });
+console.log('👁️ Blocs visibles:', urlConfig);

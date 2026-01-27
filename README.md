@@ -98,20 +98,47 @@ Le serveur démarre sur `http://localhost:8080`
 Vous pouvez personnaliser l'affichage en ajoutant des paramètres à l'URL :
 
 ```
-http://localhost:8080/overlay?scale=1.2&pos=top-right&compact=1
+http://localhost:8080/overlay?scale=1.2&pos=top-right&compact=1&thumbnail=0&nozzle=0
 ```
+
+**Paramètres d'affichage :**
 
 | Paramètre | Valeurs | Description |
 |-----------|---------|-------------|
 | `scale` | `0.5` à `2.0` | Échelle de l'overlay (défaut: 1.0) |
 | `compact` | `1` | Mode compact (moins d'espacement) |
 | `pos` | `top-left`, `top-right`, `bottom-left`, `bottom-right` | Position fixe |
+| `thumbnail` | `0` / `1` | Afficher la preview du print (défaut: 1) |
+| `progress_bar` | `0` / `1` | Afficher la barre de progression (défaut: 1) |
+| `state` | `0` / `1` | Afficher l'état (impression/pause/inactif) (défaut: 1) |
+| `file` | `0` / `1` | Afficher le nom du fichier (défaut: 1) |
+| `nozzle` | `0` / `1` | Afficher la température de la buse (défaut: 1) |
+| `bed` | `0` / `1` | Afficher la température du plateau (défaut: 1) |
+| `timer` | `0` / `1` | Afficher la durée écoulée (défaut: 1) |
+| `eta` | `0` / `1` | Afficher le temps restant estimé (défaut: 1) |
+| `status` | `0` / `1` | Afficher le statut de connexion (défaut: 1) |
 
 **Exemples :**
 
-- Overlay agrandi : `?scale=1.5`
-- Coin haut-droit : `?pos=top-right`
-- Compact et petit : `?scale=0.8&compact=1`
+- Overlay minimal (juste état + progression) :
+  ```
+  http://localhost:8080/overlay?thumbnail=0&file=0&nozzle=0&bed=0&timer=0&eta=0
+  ```
+
+- Juste les temps :
+  ```
+  http://localhost:8080/overlay?thumbnail=0&progress_bar=0&state=0&file=0&nozzle=0&bed=0
+  ```
+
+- Sans les températures :
+  ```
+  http://localhost:8080/overlay?nozzle=0&bed=0
+  ```
+
+- Compact, agrandi, sans preview :
+  ```
+  http://localhost:8080/overlay?scale=1.5&compact=1&thumbnail=0&pos=top-right
+  ```
 
 ## 📡 API REST
 
