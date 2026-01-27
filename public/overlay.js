@@ -132,7 +132,16 @@ function updateUI(data) {
   // État
   elements.state.textContent = getStateLabel(status.state);
   elements.state.className = `value state-${status.state}`;
-  elements.filename.textContent = status.filename || 'Aucun';
+  
+  // Fichier - extraire juste le nom de base (avant le premier underscore)
+  let displayFilename = status.filename || 'Aucun';
+  if (displayFilename !== 'Aucun') {
+    // Enlever l'extension .gcode
+    displayFilename = displayFilename.replace(/\.gcode$/i, '');
+    // Garder juste la partie avant le premier underscore (nom du modèle)
+    displayFilename = displayFilename.split('_')[0];
+  }
+  elements.filename.textContent = displayFilename;
   if (elements.filename.parentElement) {
     elements.filename.parentElement.parentElement.style.display = overlayConfig.showFilename ? '' : 'none';
   }
