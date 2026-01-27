@@ -31,6 +31,17 @@ const elements = {
   remaining: document.getElementById('remaining'),
   thumbnail: document.getElementById('thumbnail'),
   thumbnailContainer: document.getElementById('thumbnail-container'),
+  mainInfo: document.getElementById('main-info'),
+};
+
+// Configuration de l'overlay
+let overlayConfig = {
+  showThumbnail: true,
+  showFilename: true,
+  showProgress: true,
+  showTemperatures: true,
+  showTimes: true,
+  showStatus: true,
 };
 
 // Fonction pour formater le temps en HH:MM:SS
@@ -42,6 +53,33 @@ function formatTime(seconds) {
   const secs = Math.floor(seconds % 60);
   
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Charger la configuration de l'overlay
+async function loadConfig() {
+  try {
+    const response = await fetch('/api/config');
+    if (response.ok) {
+      const data = await response.json();
+      overlayConfig = { ...overlayConfig, ...data.data };
+      console.log('✅ Configuration chargée:', overlayConfig);
+      applyConfig();
+    }
+  } catch (error) {
+    console.log('⚠️ Impossible de charger la configuration, utilisation des valeurs par défaut');
+  }
+}
+
+// Appliquer la configuration (afficher/masquer les blocs)
+function applyConfig() {
+  const mainInfo = elements.mainInfo;
+  
+  // Afficher/masquer les sections
+  const thumbnailSection = elements.thumbnailContainer?.parentElement;
+  if (thumbnailSection) thumbnailSection.style.display = overlayConfig.showThumbnail ? '' : 'none';
+  
+  // On peut améliorer ça en ajoutant des data-attributes ou des classes
+  // Pour l'instant, on cache les sections via CSS/JS dynamique
 }
 
 // Fonction pour mettre à jour l'UI
@@ -68,13 +106,22 @@ function updateUI(data) {
 
   // Fichier
   elements.filename.textContent = status.filename || 'Aucun';
+  if (elements.filename.parentElement) {
+    elements.filename.parentElement.parentElement.style.display = overlayConfig.showFilename ? '' : 'none';
+  }
 
   // Progression
   const progressValue = Math.round(status.progress || 0);
   elements.progress.textContent = `${progressValue}%`;
   elements.progressFill.style.width = `${progressValue}%`;
+  if (elements.progress.parentElement) {
+    elements.progress.parentElement.parentElement.style.display = overlayConfig.showProgress ? '' : 'none';
+    elements.progress.parentElement.parentElement.nextElementSibling.style.display = overlayConfig.showProgress ? '' : 'none';
+  }
 
   // Températures
+  const tempsContainer = document.querySelector('.temps-container');
+  if (tempsContainer) tempsContainer.style.display = overlayConfig.showTemperatures ? '' : 'none';
   elements.extruderTemp.textContent = Math.round(status.extruderTemp);
   elements.extruderTarget.textContent = Math.round(status.extruderTarget);
   elements.bedTemp.textContent = Math.round(status.bedTemp);
@@ -83,9 +130,11 @@ function updateUI(data) {
   // Temps
   elements.duration.textContent = formatTime(status.printDuration);
   elements.remaining.textContent = formatTime(status.timeRemaining);
+  const timeContainer = document.querySelector('.time-container');
+  if (timeContainer) timeContainer.style.display = overlayConfig.showTimes ? '' : 'none';
 
   // Thumbnail
-  if (status.thumbnail) {
+  if (status.thumbnail && overlayConfig.showThumbnail) {
     elements.thumbnail.src = status.thumbnail;
     elements.thumbnail.style.display = 'block';
   } else {
@@ -133,6 +182,7 @@ async function fetchStatus() {
 
 // Polling toutes les secondes
 console.log('🚀 Démarrage du polling...');
+loadConfig(); // Charger la config au démarrage
 fetchStatus();
 setInterval(fetchStatus, 1000);
 

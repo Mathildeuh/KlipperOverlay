@@ -156,6 +156,109 @@ Health check du serveur.
 }
 ```
 
+### GET `/api/config`
+
+Retourne la configuration de l'overlay.
+
+**Réponse (200 OK) :**
+
+```json
+{
+  "success": true,
+  "data": {
+    "showThumbnail": true,
+    "showFilename": true,
+    "showProgress": true,
+    "showTemperatures": true,
+    "showTimes": true,
+    "showStatus": true
+  }
+}
+```
+
+### POST `/api/config`
+
+Met à jour la configuration de l'overlay. Permet de masquer/afficher des blocs dynamiquement.
+
+**Corps de la requête :**
+
+```json
+{
+  "showThumbnail": false,
+  "showTemperatures": false
+}
+```
+
+**Réponse (200 OK) :**
+
+```json
+{
+  "success": true,
+  "data": {
+    "showThumbnail": false,
+    "showFilename": true,
+    "showProgress": true,
+    "showTemperatures": false,
+    "showTimes": true,
+    "showStatus": true
+  },
+  "message": "Configuration mise à jour"
+}
+```
+
+**Paramètres disponibles :**
+
+| Paramètre | Type | Description |
+|-----------|------|-------------|
+| `showThumbnail` | booléen | Afficher/masquer la preview de l'impression |
+| `showFilename` | booléen | Afficher/masquer le nom du fichier |
+| `showProgress` | booléen | Afficher/masquer la progression (% + barre) |
+| `showTemperatures` | booléen | Afficher/masquer les températures (buse/plateau) |
+| `showTimes` | booléen | Afficher/masquer les temps (durée + restant) |
+| `showStatus` | booléen | Afficher/masquer l'état (impression/pause/inactif) |
+
+### POST `/api/config/reset`
+
+Réinitialise la configuration par défaut (tous les blocs affichés).
+
+**Réponse (200 OK) :**
+
+```json
+{
+  "success": true,
+  "data": {
+    "showThumbnail": true,
+    "showFilename": true,
+    "showProgress": true,
+    "showTemperatures": true,
+    "showTimes": true,
+    "showStatus": true
+  },
+  "message": "Configuration réinitialisée"
+}
+```
+
+**Exemples pratiques :**
+
+Masquer la thumbnail :
+```bash
+curl -X POST http://localhost:8080/api/config \
+  -H "Content-Type: application/json" \
+  -d '{"showThumbnail": false}'
+```
+
+Mode minimal (que l'état et la progression) :
+```bash
+curl -X POST http://localhost:8080/api/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "showThumbnail": false,
+    "showFilename": false,
+    "showTemperatures": false,
+    "showTimes": false
+  }'
+```
+
 ## 🐳 Docker (optionnel)
 
 ### Build de l'image
