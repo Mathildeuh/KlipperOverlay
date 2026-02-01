@@ -166,8 +166,9 @@ class MoonrakerService {
         // Extraire le dossier du fichier
         const filePath = filename.substring(0, filename.lastIndexOf('/') + 1);
         const thumbPath = `${filePath}${thumbnail.relative_path}`;
-        const encodedThumbPath = encodeURIComponent(thumbPath);
-        return `${config.moonraker.url}/server/files/gcodes/${encodedThumbPath}`;
+        // Utiliser le proxy local au lieu de l'URL directe Moonraker
+        // Cela permet l'accès à distance via redirection de port
+        return `/thumbnail/${encodeURIComponent(thumbPath)}`;
       }
     } catch (error) {
       // Thumbnail non disponible, ce n'est pas une erreur

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Klipper Overlay Mobile</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0f14;
+      --card: #151b22;
+      --accent: #4cc9f0;
+      --good: #2dd4bf;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .header .title {
+      font-weight: 600;
+      font-size: 16px;
+      letter-spacing: 0.2px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--bad);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+    }
+
+    .dot.connected {
+      background: var(--good);
+      box-shadow: 0 0 8px rgba(45, 212, 191, 0.9);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .thumb {
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #0f1217;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+    }
+
+    .thumb .empty {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric .value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .progress {
+      display: grid;
+      gap: 8px;
+    }
+
+    .progress-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: #0f1217;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #60a5fa, #4cc9f0);
+      transition: width 0.4s ease;
+    }
+
+    .state {
+      font-size: 14px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(79, 70, 229, 0.18);
+      color: #c7d2fe;
+    }
+
+    .state.state-printing { background: rgba(16, 185, 129, 0.18); color: #a7f3d0; }
+    .state.state-paused { background: rgba(245, 158, 11, 0.2); color: #fde68a; }
+    .state.state-error { background: rgba(239, 68, 68, 0.2); color: #fecaca; }
+    .state.state-disconnected { background: rgba(148, 163, 184, 0.2); color: #e2e8f0; }
+
+    @media (max-width: 420px) {
+      body { padding: 8px; }
+      .row { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .metric .value { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">Klipper Overlay Mobile</div>
+      <div class="status">
+        <span class="dot" id="connection-dot"></span>
+        <span id="status-text">Déconnecté</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="thumb">
+        <img id="thumbnail" alt="Aperçu du fichier">
+        <div class="empty" id="thumbnail-empty">Aucun aperçu</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="metric" style="gap: 10px;">
+        <div class="label">État</div>
+        <div class="state" id="state">Déconnecté</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="metric">
+        <div class="label">Fichier</div>
+        <div class="value" id="filename">Aucun</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="progress">
+        <div class="label">Progression</div>
+        <div class="value" id="progress">0%</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div class="metric">
+          <div class="label">Buse</div>
+          <div class="value"><span id="extruder-temp">--</span>°C / <span id="extruder-target">--</span>°C</div>
+        </div>
+        <div class="metric">
+          <div class="label">Plateau</div>
+          <div class="value"><span id="bed-temp">--</span>°C / <span id="bed-target">--</span>°C</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div class="metric">
+          <div class="label">Durée</div>
+          <div class="value" id="duration">--:--:--</div>
+        </div>
+        <div class="metric">
+          <div class="label">Restant</div>
+          <div class="value" id="remaining">--:--:--</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const elements = {
+      statusText: document.getElementById('status-text'),
+      connectionDot: document.getElementById('connection-dot'),
+      state: document.getElementById('state'),
+      filename: document.getElementById('filename'),
+      progress: document.getElementById('progress'),
+      progressFill: document.getElementById('progress-fill'),
+      extruderTemp: document.getElementById('extruder-temp'),
+      extruderTarget: document.getElementById('extruder-target'),
+      bedTemp: document.getElementById('bed-temp'),
+      bedTarget: document.getElementById('bed-target'),
+      duration: document.getElementById('duration'),
+      remaining: document.getElementById('remaining'),
+      thumbnail: document.getElementById('thumbnail'),
+      thumbnailEmpty: document.getElementById('thumbnail-empty'),
+    };
+
+    function formatTime(seconds) {
+      if (!seconds || seconds < 0) return '--:--:--';
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function getStateLabel(state) {
+      const labels = {
+        printing: 'Impression',
+        paused: 'Pause',
+        idle: 'Inactif',
+        error: 'Erreur',
+        disconnected: 'Déconnecté',
+      };
+      return labels[state] || state;
+    }
+
+    function setDisconnected() {
+      elements.connectionDot.classList.remove('connected');
+      elements.statusText.textContent = 'Déconnecté';
+      elements.state.textContent = 'Déconnecté';
+      elements.state.className = 'state state-disconnected';
+    }
+
+    function updateUI(data) {
+      if (!data || !data.success) {
+        setDisconnected();
+        return;
+      }
+
+      const status = data.data;
+      if (status.state === 'disconnected') {
+        setDisconnected();
+        return;
+      }
+
+      elements.connectionDot.classList.add('connected');
+      elements.statusText.textContent = 'Connecté';
+
+      elements.state.textContent = getStateLabel(status.state);
+      elements.state.className = `state state-${status.state}`;
+
+      let displayFilename = status.filename || 'Aucun';
+      if (displayFilename !== 'Aucun') {
+        displayFilename = displayFilename.replace(/\.gcode$/i, '');
+        displayFilename = displayFilename.split('_')[0];
+      }
+      elements.filename.textContent = displayFilename;
+
+      const progressValue = Math.round(status.progress || 0);
+      elements.progress.textContent = `${progressValue}%`;
+      elements.progressFill.style.width = `${progressValue}%`;
+
+      elements.extruderTemp.textContent = Math.round(status.extruderTemp);
+      elements.extruderTarget.textContent = Math.round(status.extruderTarget);
+      elements.bedTemp.textContent = Math.round(status.bedTemp);
+      elements.bedTarget.textContent = Math.round(status.bedTarget);
+
+      elements.duration.textContent = formatTime(status.printDuration);
+      elements.remaining.textContent = formatTime(status.timeRemaining);
+
+      if (status.thumbnail) {
+        elements.thumbnail.src = status.thumbnail;
+        elements.thumbnail.style.display = 'block';
+        elements.thumbnailEmpty.style.display = 'none';
+      } else {
+        elements.thumbnail.style.display = 'none';
+        elements.thumbnailEmpty.style.display = 'block';
+      }
+    }
+
+    async function fetchStatus() {
+      try {
+        const response = await fetch('/api/status');
+        if (!response.ok) {
+          setDisconnected();
+          return;
+        }
+        const data = await response.json();
+        updateUI(data);
+      } catch (error) {
+        setDisconnected();
+      }
+    }
+
+    fetchStatus();
+    setInterval(fetchStatus, 1000);
+  </script>
+</body>
+</html>

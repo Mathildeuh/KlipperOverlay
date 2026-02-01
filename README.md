@@ -93,7 +93,31 @@ Le serveur démarre sur `http://localhost:8080`
 4. ✅ **Cocher "Arrière-plan transparent"** (important !)
 5. Cliquer sur OK
 
-### 2. Personnalisation via paramètres URL
+### 2. Page webcam + overlay
+
+Une page dédiée `/webcam` affiche la webcam en fullscreen avec l'overlay superposé dans le coin :
+
+```
+http://localhost:8080/webcam
+```
+
+**Avec paramètres :**
+
+| Paramètre | Valeur | Description |
+|-----------|--------|-------------|
+| `pos` | `top-left`, `top-right`, `bottom-left`, `bottom-right` | Position de l'overlay (défaut: top-left) |
+| `fullscreen` | `1` | Mode fullscreen overlay (masque la webcam) |
+| `moonraker` | URL | URL personnalisée de la webcam Moonraker |
+
+**Exemples :**
+
+```
+# Overlay top-right
+http://localhost:8080/webcam?pos=top-right
+
+# Juste l'overlay en fullscreen
+http://localhost:8080/webcam?fullscreen=1
+```
 
 Vous pouvez personnaliser l'affichage en ajoutant des paramètres à l'URL :
 
@@ -428,6 +452,19 @@ Pour accéder à l'overlay depuis un autre appareil :
    ```env
    CORS_ENABLED=true
    ```
+
+## 🌍 Accès à distance (redirection de port)
+
+Si vous accédez à l'overlay depuis l'extérieur via une redirection de port :
+
+1. Configurer la redirection de port sur votre routeur :
+   - Port externe → `192.168.1.IP:8080` (interne)
+
+2. Utiliser l'URL publique : `http://votre.domaine.com:PORTEXTERNE/overlay`
+
+**Les images se chargeront correctement** grâce au proxy intégré de Klipper Overlay qui transite toutes les requêtes d'images via le serveur local ! 🖼️
+
+**Note :** Les thumbnails sont automatiquement servies via le proxy local `/thumbnail/*` pour garantir l'accès même à distance.
 
 ## 📝 Notes techniques
 

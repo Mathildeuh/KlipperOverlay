@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klipper Webcam + Overlay</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 100vw;
+      height: 100vh;
+      background: #000;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    #webcam-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #111;
+    }
+
+    #webcam-stream {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #overlay-frame {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 400px;
+      height: 600px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.9);
+    }
+
+    #overlay-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: transparent;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      #overlay-frame {
+        width: 45vw;
+        height: 60vh;
+        top: 12px;
+        left: 12px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      #overlay-frame {
+        width: 100vw;
+        height: 45vh;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 12px 12px 0 0;
+      }
+
+      #webcam-container {
+        height: 60vh;
+      }
+
+      #webcam-stream {
+        object-fit: cover;
+      }
+    }
+
+    /* Ajuste le contenu de l'iframe pour éviter le crop sur petits écrans */
+    #overlay-frame iframe {
+      transform-origin: top left;
+    }
+
+    /* Mode fullscreen overlay (via ?fullscreen=1) */
+    body.fullscreen-overlay #overlay-frame {
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      border-radius: 0;
+    }
+
+    body.fullscreen-overlay #webcam-container {
+      display: none;
+    }
+
+    /* Overlay caché par défaut */
+    body.overlay-hidden #overlay-frame {
+      display: none;
+    }
+
+    /* Loading indicator */
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* Floating action button */
+    #overlay-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 2000;
+      border: none;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+      cursor: pointer;
+    }
+
+    #overlay-toggle.active {
+      background: rgba(79, 70, 229, 0.9);
+    }
+
+    @media (max-width: 600px) {
+      #overlay-toggle {
+        right: 12px;
+        bottom: 12px;
+        font-size: 13px;
+        padding: 10px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="webcam-container">
+    <img id="webcam-stream" src="" alt="Webcam stream">
+    <div class="loading" id="loading-indicator">Chargement de la webcam...</div>
+  </div>
+
+  <div id="overlay-frame">
+    <iframe id="overlay-iframe" src="/overlay?pos=top-left" frameborder="0"></iframe>
+  </div>
+
+  <button id="overlay-toggle" type="button">Afficher overlay</button>
+
+  <script>
+    // Configuration
+    const urlParams = new URLSearchParams(window.location.search);
+    const moonrakerUrl = urlParams.get('moonraker') || '/api/webcam'; // Peut être customisé
+    const fullscreenOverlay = urlParams.get('fullscreen') === '1';
+    const position = urlParams.get('pos') || 'top-left';
+
+    // Appliquer le mode fullscreen si demandé
+    if (fullscreenOverlay) {
+      document.body.classList.add('fullscreen-overlay');
+    }
+
+    // Overlay caché par défaut (affiché via bouton)
+    document.body.classList.add('overlay-hidden');
+
+    // Positionner l'overlay
+    const overlayFrame = document.getElementById('overlay-frame');
+    const overlayIframe = document.getElementById('overlay-iframe');
+    const overlayToggle = document.getElementById('overlay-toggle');
+    if (position === 'top-right') {
+      overlayFrame.style.left = 'auto';
+      overlayFrame.style.right = '20px';
+    } else if (position === 'bottom-left') {
+      overlayFrame.style.top = 'auto';
+      overlayFrame.style.bottom = '20px';
+    } else if (position === 'bottom-right') {
+      overlayFrame.style.left = 'auto';
+      overlayFrame.style.right = '20px';
+      overlayFrame.style.top = 'auto';
+      overlayFrame.style.bottom = '20px';
+    }
+
+    // Ajuster l'échelle de l'overlay pour mobile (évite le crop)
+    function getOverlayScale() {
+      const w = window.innerWidth;
+      if (w <= 420) return 0.68;
+      if (w <= 600) return 0.75;
+      if (w <= 900) return 0.85;
+      return 1.0;
+    }
+
+    function applyOverlayScale() {
+      const baseScale = getOverlayScale();
+      const isFullscreen = document.body.classList.contains('fullscreen-overlay');
+      const effectiveScale = isFullscreen ? baseScale * 2 : baseScale;
+      const overlayUrl = `/overlay?pos=top-left&scale=${effectiveScale}`;
+      overlayIframe.src = overlayUrl;
+      overlayIframe.style.transform = `scale(${effectiveScale})`;
+    }
+
+    applyOverlayScale();
+    window.addEventListener('resize', applyOverlayScale);
+
+    // Bouton flottant pour activer/désactiver le fullscreen overlay
+    function updateToggleLabel() {
+      const isFullscreen = document.body.classList.contains('fullscreen-overlay');
+      const isHidden = document.body.classList.contains('overlay-hidden');
+      if (isHidden) {
+        overlayToggle.textContent = 'Afficher overlay';
+      } else if (isFullscreen) {
+        overlayToggle.textContent = 'Quitter plein écran';
+      } else {
+        overlayToggle.textContent = 'Overlay plein écran';
+      }
+      overlayToggle.classList.toggle('active', !isHidden);
+    }
+
+    overlayToggle.addEventListener('click', () => {
+      const isHidden = document.body.classList.contains('overlay-hidden');
+      if (isHidden) {
+        document.body.classList.remove('overlay-hidden');
+        document.body.classList.add('fullscreen-overlay');
+      } else {
+        document.body.classList.remove('fullscreen-overlay');
+        document.body.classList.add('overlay-hidden');
+      }
+      updateToggleLabel();
+    });
+
+    updateToggleLabel();
+
+    // Charger la webcam
+    const webcamStream = document.getElementById('webcam-stream');
+    const webcamContainer = document.getElementById('webcam-container');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    // Construire l'URL du flux webcam Moonraker
+    function loadWebcam() {
+      // Priorité 1: Snapshot via proxy local (très fiable)
+      // Priorité 2: Stream direct sur IP (bon pour distant)
+      // Priorité 3: Autres fallbacks
+      
+      const snapshotUrls = [
+        '/webcam/snapshot',                               // Proxy snapshot local ✅ Meilleur pour distant
+        'http://192.168.1.155:8080/webcam/snapshot',    // Proxy snapshot via port 8080
+      ];
+
+      const streamUrls = [
+        'http://192.168.1.155/webcam/stream',            // ✅ Accès direct sur IP - meilleur pour distant
+        'http://192.168.1.155:8080/webcam/stream',       // Port 8080 fallback
+        '/webcam/stream',                                 // Proxy local stream
+      ];
+
+      // Si customisé via paramètre
+      const moonrakerUrl = urlParams.get('moonraker') || null;
+      if (moonrakerUrl) {
+        snapshotUrls.unshift(moonrakerUrl);
+        streamUrls.unshift(moonrakerUrl);
+      }
+
+      // Combiner: d'abord essayer les snapshots (plus fiables), puis les streams
+      let allUrls = [...snapshotUrls, ...streamUrls];
+      let currentIndex = 0;
+      let useSnapshot = true;
+
+      function tryNextUrl() {
+        if (currentIndex >= allUrls.length) {
+          console.error('❌ Impossible de charger la webcam');
+          loadingIndicator.innerHTML = '<div style="color: #f44; text-align: center; padding: 20px;"><p>❌ Webcam non disponible</p><p style="font-size: 12px; color: #888; margin-top: 10px;">Vérifiez que http://192.168.1.155/webcam/stream est accessible</p></div>';
+          return;
+        }
+
+        const url = allUrls[currentIndex];
+        const urlType = currentIndex < snapshotUrls.length ? '📸 Snapshot' : '🎥 Stream';
+        
+        console.log(`🔍 Essai ${urlType} (${currentIndex + 1}/${allUrls.length}): ${url}`);
+        
+        let timeout = setTimeout(() => {
+          console.log(`⏱️ Timeout sur ${url}`);
+          currentIndex++;
+          tryNextUrl();
+        }, 4000);
+
+        const testImg = new Image();
+        testImg.crossOrigin = 'anonymous';
+        
+        testImg.onload = () => {
+          clearTimeout(timeout);
+          console.log(`✅ Webcam trouvée (${urlType}) à: ${url}`);
+          loadingIndicator.style.display = 'none';
+          
+          // Déterminer si c'est un snapshot ou un stream
+          const isSnapshot = currentIndex < snapshotUrls.length;
+          
+          if (isSnapshot) {
+            // Mode snapshot: recharger l'image toutes les 500ms
+            function updateSnapshot() {
+              webcamStream.src = url + '?t=' + Date.now();
+            }
+            webcamStream.src = url;
+            setInterval(updateSnapshot, 500);
+            console.log('📸 Mode snapshot activé (rafraîchissement 500ms)');
+          } else {
+            // Mode stream: charger directement
+            webcamStream.src = url;
+            console.log('🎥 Mode stream activé');
+          }
+        };
+
+        testImg.onerror = () => {
+          clearTimeout(timeout);
+          console.log(`❌ ${urlType} échouée: ${url}`);
+          currentIndex++;
+          tryNextUrl();
+        };
+
+        testImg.src = url;
+      }
+
+      tryNextUrl();
+    }
+
+    // Charger au démarrage
+    loadWebcam();
+
+    console.log('🎥 Webcam Overlay chargé');
+    console.log('Position de l\'overlay:', position);
+    console.log('Mode fullscreen:', fullscreenOverlay);
+  </script>
+</body>
+</html>
