@@ -8,6 +8,10 @@ import apiRoutes from './routes/api.routes';
 
 const app: Express = express();
 
+// Cache pour snapshots (évite les pics de charge)
+let snapshotCache: { data: Buffer; timestamp: number } | null = null;
+const SNAPSHOT_CACHE_TTL = 100; // ms
+
 // Middleware
 if (config.server.corsEnabled) {
   app.use(cors());
@@ -103,28 +107,38 @@ app.get('/webcam/*', async (req: Request, res: Response) => {
 // Utile pour l'accès distant via img tags (plus fiable que le stream MJPEG brut)
 app.get('/webcam/snapshot', async (req: Request, res: Response) => {
   try {
+    // Vérifier le cache
+    const now = Date.now();
+    if (snapshotCache && (now - snapshotCache.timestamp) < SNAPSHOT_CACHE_TTL) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.send(snapshotCache.data);
+      return;
+    }
+
     const moonrakerUrl = new URL(config.moonraker.url);
     const webcamHost = moonrakerUrl.hostname;
     const snapshotUrl = `http://${webcamHost}/webcam/stream?action=snapshot`;
-    
-    console.log(`📸 Snapshot webcam depuis: ${snapshotUrl}`);
 
     const response = await axios.get(snapshotUrl, {
       responseType: 'arraybuffer',
       timeout: 5000,
     });
 
-    // Appliquer une rotation de 180° à l'image
-    const rotatedImage = await sharp(Buffer.from(response.data))
-      .rotate(180)
-      .jpeg({ quality: 90 })
-      .toBuffer();
+    // Juste retourner le JPEG brut (rotation en CSS côté client)
+    // Aucun traitement Sharp pour libérer CPU
+    const jpegBuffer = Buffer.from(response.data);
+
+    // Mettre en cache
+    snapshotCache = { data: jpegBuffer, timestamp: now };
 
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(rotatedImage);
+    res.send(jpegBuffer);
 
   } catch (error) {
     console.error('Erreur snapshot webcam:', error);

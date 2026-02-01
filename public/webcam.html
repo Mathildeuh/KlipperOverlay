@@ -296,32 +296,29 @@
 
     // Construire l'URL du flux webcam Moonraker
     function loadWebcam() {
-      // Priorité 1: Snapshot via proxy local (très fiable)
-      // Priorité 2: Stream direct sur IP (bon pour distant)
-      // Priorité 3: Autres fallbacks
+      // Priorité 1: Stream MJPEG direct (meilleur pour fluidité)
+      // Priorité 2: Snapshot fallback
       
-      const snapshotUrls = [
-        '/webcam/snapshot',                               // Proxy snapshot local ✅ Meilleur pour distant
-        'http://192.168.1.155:8080/webcam/snapshot',    // Proxy snapshot via port 8080
+      const streamUrls = [
+        'http://192.168.1.155/webcam/stream',            // ✅ Stream MJPEG direct
+        'http://192.168.1.155:8080/webcam/stream',       // Proxy stream
+        '/webcam/stream',                                 // Proxy local
       ];
 
-      const streamUrls = [
-        'http://192.168.1.155/webcam/stream',            // ✅ Accès direct sur IP - meilleur pour distant
-        'http://192.168.1.155:8080/webcam/stream',       // Port 8080 fallback
-        '/webcam/stream',                                 // Proxy local stream
+      const snapshotUrls = [
+        '/webcam/snapshot',                               // Proxy snapshot fallback
+        'http://192.168.1.155:8080/webcam/snapshot',    // Snapshot fallback
       ];
 
       // Si customisé via paramètre
       const moonrakerUrl = urlParams.get('moonraker') || null;
       if (moonrakerUrl) {
-        snapshotUrls.unshift(moonrakerUrl);
         streamUrls.unshift(moonrakerUrl);
       }
 
-      // Combiner: d'abord essayer les snapshots (plus fiables), puis les streams
-      let allUrls = [...snapshotUrls, ...streamUrls];
+      // Combiner: stream en priorité
+      let allUrls = [...streamUrls, ...snapshotUrls];
       let currentIndex = 0;
-      let useSnapshot = true;
 
       function tryNextUrl() {
         if (currentIndex >= allUrls.length) {
@@ -331,7 +328,8 @@
         }
 
         const url = allUrls[currentIndex];
-        const urlType = currentIndex < snapshotUrls.length ? '📸 Snapshot' : '🎥 Stream';
+        const isStream = currentIndex < streamUrls.length;
+        const urlType = isStream ? '🎥 Stream' : '📸 Snapshot';
         
         console.log(`🔍 Essai ${urlType} (${currentIndex + 1}/${allUrls.length}): ${url}`);
         
@@ -349,21 +347,18 @@
           console.log(`✅ Webcam trouvée (${urlType}) à: ${url}`);
           loadingIndicator.style.display = 'none';
           
-          // Déterminer si c'est un snapshot ou un stream
-          const isSnapshot = currentIndex < snapshotUrls.length;
-          
-          if (isSnapshot) {
-            // Mode snapshot: recharger l'image toutes les 500ms
+          if (isStream) {
+            // Mode stream MJPEG: charger directement, pas de refresh
+            webcamStream.src = url;
+            console.log('🎥 Mode stream MJPEG activé (natif)');
+          } else {
+            // Mode snapshot: recharger l'image toutes les 300ms
             function updateSnapshot() {
               webcamStream.src = url + '?t=' + Date.now();
             }
             webcamStream.src = url;
-            setInterval(updateSnapshot, 500);
-            console.log('📸 Mode snapshot activé (rafraîchissement 500ms)');
-          } else {
-            // Mode stream: charger directement
-            webcamStream.src = url;
-            console.log('🎥 Mode stream activé');
+            setInterval(updateSnapshot, 300);
+            console.log('📸 Mode snapshot activé (300ms)');
           }
         };
 
