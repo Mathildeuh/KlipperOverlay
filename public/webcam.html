@@ -541,6 +541,9 @@
       }
     }
 
+    // Vérifier les notifications au démarrage
+    updateNotificationBanner();
+
     // Vérifier le status au démarrage et tous les 5 secondes
     checkPrinterStatus();
     setInterval(checkPrinterStatus, 5000);
