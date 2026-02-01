@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import axios from 'axios';
+import sharp from 'sharp';
 import { config } from './config';
 import apiRoutes from './routes/api.routes';
 
@@ -113,11 +114,17 @@ app.get('/webcam/snapshot', async (req: Request, res: Response) => {
       timeout: 5000,
     });
 
+    // Appliquer une rotation de 180° à l'image
+    const rotatedImage = await sharp(Buffer.from(response.data))
+      .rotate(180)
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(Buffer.from(response.data, 'binary'));
+    res.send(rotatedImage);
 
   } catch (error) {
     console.error('Erreur snapshot webcam:', error);
@@ -175,6 +182,9 @@ app.get('/', (req: Request, res: Response) => {
         <h2>Endpoints disponibles:</h2>
         <div class="endpoint">
           <strong>GET</strong> <a href="/overlay">/overlay</a> - Page overlay pour OBS
+        </div>
+        <div class="endpoint">
+          <strong>GET</strong> <a href="/webcam">/webcam</a> - Page webcam + overlay superposé
         </div>
         <div class="endpoint">
           <strong>GET</strong> <a href="/mobile">/mobile</a> - Page mobile responsive
