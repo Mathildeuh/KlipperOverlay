@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import axios from 'axios';
 import sharp from 'sharp';
 import { config } from './config';
@@ -17,6 +18,26 @@ if (config.server.corsEnabled) {
   app.use(cors());
 }
 app.use(express.json());
+
+// ACME challenge support for certbot (must be before static middleware)
+app.get('/.well-known/acme-challenge/:token', async (req: Request, res: Response) => {
+  try {
+    const token = req.params.token;
+    const acmePath = path.join('/var/lib/letsencrypt/webroot', '.well-known', 'acme-challenge', token);
+    
+    if (fs.existsSync(acmePath)) {
+      const content = fs.readFileSync(acmePath, 'utf8');
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(content);
+    } else {
+      res.status(404).send('Not found');
+    }
+  } catch (error) {
+    console.error('ACME challenge error:', error);
+    res.status(500).send('Error');
+  }
+});
+
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes

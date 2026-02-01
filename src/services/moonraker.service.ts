@@ -168,7 +168,10 @@ class MoonrakerService {
         const thumbPath = `${filePath}${thumbnail.relative_path}`;
         // Utiliser le proxy local au lieu de l'URL directe Moonraker
         // Cela permet l'accès à distance via redirection de port
-        return `/thumbnail/${encodeURIComponent(thumbPath)}`;
+        // Encode seulement le nom du fichier, pas les slashes du chemin
+        const parts = thumbPath.split('/');
+        const encodedParts = parts.map(part => encodeURIComponent(part));
+        return `/thumbnail/${encodedParts.join('/')}`;
       }
     } catch (error) {
       // Thumbnail non disponible, ce n'est pas une erreur

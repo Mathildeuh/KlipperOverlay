@@ -9,19 +9,19 @@
   <meta name="description" content="Vue en direct de l'imprimante 3D Klipper">
 
   <!-- Facebook Meta Tags -->
-  <meta property="og:url" content="http://printer.mathilde.online/webcam">
+  <meta property="og:url" content="/webcam">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Klipper Webcam Live">
   <meta property="og:description" content="Vue en direct de l'imprimante 3D Klipper">
-  <meta property="og:image" content="http://printer.mathilde.online/webcam/snapshot">
+  <meta property="og:image" content="/webcam/snapshot">
 
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
   <meta property="twitter:domain" content="printer.mathilde.online">
-  <meta property="twitter:url" content="http://printer.mathilde.online/webcam">
+  <meta property="twitter:url" content="/webcam">
   <meta name="twitter:title" content="Klipper Webcam Live">
   <meta name="twitter:description" content="Vue en direct de l'imprimante 3D Klipper">
-  <meta name="twitter:image" content="http://printer.mathilde.online/webcam/snapshot">
+  <meta name="twitter:image" content="/webcam/snapshot">
 
   <!-- Meta Tags Generated via https://www.opengraph.xyz -->
   
@@ -153,6 +153,24 @@
       font-size: 14px;
     }
 
+    /* Offline banner */
+    .offline-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      color: #f87171;
+      padding: 40px 60px;
+      border-radius: 16px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+      border: 2px solid rgba(248, 113, 113, 0.3);
+    }
+
     /* Floating action button */
     #overlay-toggle {
       position: fixed;
@@ -183,12 +201,106 @@
         padding: 10px 14px;
       }
     }
+
+    /* FPS Counter */
+    #fps-counter {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #4cc9f0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-family: monospace;
+      font-weight: 600;
+      z-index: 1500;
+      border: 1px solid rgba(76, 201, 240, 0.3);
+      display: none;
+    }
+
+    #fps-counter.show {
+      display: block;
+    }
+
+    @media (max-width: 600px) {
+      #fps-counter {
+        display: none !important;
+      }
+    }
+
+    /* Notification Permission Banner */
+    #notif-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95));
+      color: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      z-index: 3000;
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    #notif-banner.hidden {
+      display: none;
+    }
+
+    #notif-banner .message {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    #notif-banner button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    #notif-banner .allow-btn {
+      background: #fff;
+      color: #3b82f6;
+    }
+
+    #notif-banner .allow-btn:hover {
+      background: #f0f9ff;
+    }
+
+    #notif-banner .dismiss-btn {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    #notif-banner .dismiss-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
   </style>
 </head>
 <body>
+  <div id="notif-banner" class="hidden">
+    <div class="message">📢 Activer les notifications pour recevoir les alertes d'imprimante</div>
+    <button class="allow-btn" id="notif-allow">Activer</button>
+    <button class="dismiss-btn" id="notif-dismiss">Fermer</button>
+  </div>
+
   <div id="webcam-container">
     <img id="webcam-stream" src="" alt="Webcam stream">
     <div class="loading" id="loading-indicator">Chargement de la webcam...</div>
+    <div class="offline-banner" id="offline-banner" style="display: none;">
+      <div style="font-size: 24px; margin-bottom: 10px;">🔴</div>
+      <div>L'imprimante est hors-ligne...</div>
+    </div>
   </div>
 
   <div id="overlay-frame">
@@ -196,6 +308,8 @@
   </div>
 
   <button id="overlay-toggle" type="button">Afficher overlay</button>
+
+  <div id="fps-counter">FPS: 0</div>
 
   <script>
     // Configuration
@@ -209,8 +323,8 @@
       document.body.classList.add('fullscreen-overlay');
     }
 
-    // Overlay caché par défaut (affiché via bouton)
-    document.body.classList.add('overlay-hidden');
+    // Overlay visible par défaut (masquable via bouton)
+    // (pas d'ajout de overlay-hidden)
 
     // Positionner l'overlay
     const overlayFrame = document.getElementById('overlay-frame');
@@ -293,6 +407,143 @@
     const webcamStream = document.getElementById('webcam-stream');
     const webcamContainer = document.getElementById('webcam-container');
     const loadingIndicator = document.getElementById('loading-indicator');
+    const offlineBanner = document.getElementById('offline-banner');
+
+    // Vérifier le status de l'imprimante
+    async function checkPrinterStatus() {
+      try {
+        const response = await fetch('/api/status');
+        if (!response.ok) {
+          offlineBanner.style.display = 'flex';
+          offlineBanner.style.alignItems = 'center';
+          offlineBanner.style.justifyContent = 'center';
+          offlineBanner.style.flexDirection = 'column';
+          return false;
+        }
+        const data = await response.json();
+        
+        if (!data.success || data.data.state === 'disconnected') {
+          offlineBanner.style.display = 'flex';
+          offlineBanner.style.alignItems = 'center';
+          offlineBanner.style.justifyContent = 'center';
+          offlineBanner.style.flexDirection = 'column';
+          
+          // Si l'imprimante était connectée, elle vient de se déconnecter
+          if (window.lastPrinterOnline) {
+            console.log('⚠️ Imprimante déconnectée');
+            window.lastPrinterOnline = false;
+          }
+          return false;
+        } else {
+          offlineBanner.style.display = 'none';
+          
+          // Si l'imprimante était déconnectée, elle vient de se reconnecter
+          if (!window.lastPrinterOnline && window.lastPrinterOnline !== undefined) {
+            console.log('✅ Imprimante reconnectée - envoi de notification');
+            sendNotification('🖨️ Imprimante en ligne!', {
+              body: 'Klipper est de retour en ligne',
+              icon: '/favicon.ico',
+              tag: 'printer-online',
+              requireInteraction: false
+            });
+          }
+
+          // Vérifier la fin d'impression
+          const currentState = data.data.state;
+          if (window.lastPrinterState === 'printing' && currentState === 'idle') {
+            console.log('✅ Impression terminée - envoi de notification');
+            const filename = data.data.filename || 'Fichier inconnu';
+            sendNotification('✅ Impression terminée!', {
+              body: `${filename}\nTerminée avec succès`,
+              icon: '/favicon.ico',
+              tag: 'print-complete',
+              requireInteraction: false
+            });
+          }
+
+          window.lastPrinterState = currentState;
+          window.lastPrinterOnline = true;
+          return true;
+        }
+      } catch (error) {
+        console.error('Erreur vérification printer status:', error);
+        offlineBanner.style.display = 'flex';
+        offlineBanner.style.alignItems = 'center';
+        offlineBanner.style.justifyContent = 'center';
+        offlineBanner.style.flexDirection = 'column';
+        window.lastPrinterOnline = false;
+        return false;
+      }
+    }
+
+    // Fonction pour envoyer une notification
+    function sendNotification(title, options = {}) {
+      if (!('Notification' in window)) {
+        console.log('Les notifications ne sont pas supportées par ce navigateur');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        new Notification(title, options);
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification(title, options);
+          }
+        });
+      }
+    }
+
+    // Bandeau de permission de notification
+    const notifBanner = document.getElementById('notif-banner');
+    const notifAllow = document.getElementById('notif-allow');
+    const notifDismiss = document.getElementById('notif-dismiss');
+
+    function updateNotificationBanner() {
+      if ('Notification' in window) {
+        const isHttps = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        
+        if (!isHttps) {
+          // HTTP: notifications non disponibles
+          notifBanner.innerHTML = '<div class="message">🔒 Les notifications requirent HTTPS. Accède via https://... pour les activer</div><button class="dismiss-btn" id="notif-dismiss-http">Fermer</button>';
+          notifBanner.classList.remove('hidden');
+          document.getElementById('notif-dismiss-http').addEventListener('click', () => {
+            notifBanner.classList.add('hidden');
+          });
+        } else if (Notification.permission === 'default' || Notification.permission === 'denied') {
+          // HTTPS: afficher bandeau de permission
+          notifBanner.innerHTML = '<div class="message">📢 Activer les notifications pour recevoir les alertes d\'imprimante</div><button class="allow-btn" id="notif-allow">Activer</button><button class="dismiss-btn" id="notif-dismiss">Fermer</button>';
+          notifBanner.classList.remove('hidden');
+          
+          document.getElementById('notif-allow').addEventListener('click', () => {
+            console.log('Clic sur Activer, permission actuelle:', Notification.permission);
+            Notification.requestPermission().then(permission => {
+              console.log('Permission retournée:', permission);
+              if (permission === 'granted') {
+                notifBanner.classList.add('hidden');
+                sendNotification('✅ Notifications activées!', {
+                  body: 'Tu recevras des alertes sur ta imprimante',
+                  icon: '/favicon.ico'
+                });
+              }
+              updateNotificationBanner();
+            });
+          });
+
+          document.getElementById('notif-dismiss').addEventListener('click', () => {
+            notifBanner.classList.add('hidden');
+          });
+        } else {
+          notifBanner.classList.add('hidden');
+        }
+      } else {
+        notifBanner.classList.add('hidden');
+      }
+    }
+
+    // Vérifier le status au démarrage et tous les 5 secondes
+    checkPrinterStatus();
+    setInterval(checkPrinterStatus, 5000);
 
     // Construire l'URL du flux webcam Moonraker
     function loadWebcam() {
@@ -381,6 +632,73 @@
     console.log('🎥 Webcam Overlay chargé');
     console.log('Position de l\'overlay:', position);
     console.log('Mode fullscreen:', fullscreenOverlay);
+
+    // FPS Counter - Compte les vrais frames
+    const fpsCounter = document.getElementById('fps-counter');
+    let frameCount = 0;
+    let lastFpsUpdate = Date.now();
+    let streamMode = 'stream';
+    let lastFrameTime = Date.now();
+    let frameChangeCount = 0;
+
+    // Observer pour détecter les changements de src
+    const originalDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    let currentSrc = webcamStream.src;
+
+    Object.defineProperty(webcamStream, 'src', {
+      get() { 
+        return currentSrc; 
+      },
+      set(value) {
+        if (value !== currentSrc) {
+          frameChangeCount++;
+          streamMode = value.includes('snapshot') ? 'snapshot' : 'stream';
+        }
+        currentSrc = value;
+        originalDescriptor.set.call(webcamStream, value);
+      }
+    });
+
+    // Counter pour stream MJPEG - mesurer via requestAnimationFrame + détection de changement
+    let lastStreamCheckTime = Date.now();
+    let estimatedStreamFps = 0;
+
+    function measureStreamFps() {
+      const now = Date.now();
+      const delta = now - lastStreamCheckTime;
+      
+      // Tous les 500ms, estimer le FPS basé sur les requestAnimationFrames
+      if (delta > 500) {
+        // On compte combien de fois cette fonction a été appelée en 500ms
+        // Si elle est appelée 30 fois en 500ms = 60 FPS (max browser refresh)
+        estimatedStreamFps = Math.min(60, Math.round((frameChangeCount / delta) * 1000));
+        lastStreamCheckTime = now;
+        frameChangeCount = 0;
+      }
+      
+      requestAnimationFrame(measureStreamFps);
+    }
+
+    measureStreamFps();
+
+    // Mettre à jour l'affichage FPS toutes les secondes
+    setInterval(() => {
+      const now = Date.now();
+      const elapsed = (now - lastFpsUpdate) / 1000;
+      const snapshotFps = Math.round(frameCount / elapsed);
+      
+      if (streamMode === 'snapshot') {
+        fpsCounter.textContent = `📸 ${snapshotFps} FPS`;
+      } else {
+        // Pour le stream, utiliser l'estimation
+        fpsCounter.textContent = `🎥 ${estimatedStreamFps || '~30'} FPS`;
+      }
+      fpsCounter.classList.add('show');
+      
+      console.log(`📊 Mode: ${streamMode}, FPS: ${streamMode === 'snapshot' ? snapshotFps : estimatedStreamFps}`);
+      frameCount = 0;
+      lastFpsUpdate = now;
+    }, 1000);
   </script>
 </body>
 </html>
