@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Klipper Webcam</title>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
   
   <!-- PWA Meta Tags -->
   <meta name="application-name" content="Klipper Overlay">
@@ -1029,16 +1030,15 @@
     setInterval(checkPrinterStatus, 5000);
 
     // ===== Webcam Loading =====
+    let webcamConnectedOnce = false;
+    
     function loadWebcam() {
       const streamUrls = [
-        'http://192.168.1.155/webcam/stream',
-        'http://192.168.1.155:8080/webcam/stream',
         '/webcam/stream',
       ];
 
       const snapshotUrls = [
         '/webcam/snapshot',
-        'http://192.168.1.155:8080/webcam/snapshot',
       ];
 
       const moonrakerUrl = urlParams.get('moonraker') || null;
@@ -1079,7 +1079,10 @@
           if (isStream) {
             webcamStream.src = url;
             console.log('🎥 Mode stream MJPEG activé');
-            showToast('Webcam connectée', 'Stream MJPEG actif', 'success', 3000);
+            if (!webcamConnectedOnce) {
+              showToast('Webcam connectée', 'Stream MJPEG actif', 'success', 3000);
+              webcamConnectedOnce = true;
+            }
           } else {
             function updateSnapshot() {
               webcamStream.src = url + '?t=' + Date.now();
@@ -1087,7 +1090,10 @@
             webcamStream.src = url;
             setInterval(updateSnapshot, 300);
             console.log('📸 Mode snapshot activé (300ms)');
-            showToast('Webcam connectée', 'Mode snapshot actif', 'info', 3000);
+            if (!webcamConnectedOnce) {
+              showToast('Webcam connectée', 'Mode snapshot actif', 'info', 3000);
+              webcamConnectedOnce = true;
+            }
           }
         };
 
