@@ -249,11 +249,16 @@ class MoonrakerService {
   private mapPrintState(state: string): PrinterStatus['state'] {
     const stateLower = state.toLowerCase();
     
-    if (stateLower.includes('printing')) return 'printing';
-    if (stateLower.includes('paused')) return 'paused';
-    if (stateLower.includes('standby') || stateLower.includes('ready')) return 'idle';
-    if (stateLower.includes('error')) return 'error';
+    console.log(`📊 État Klipper reçu: "${state}" (${stateLower})`);
     
+    if (stateLower === 'printing') return 'printing';
+    if (stateLower === 'paused') return 'paused';
+    if (stateLower === 'complete' || stateLower === 'standby' || stateLower === 'ready') return 'idle';
+    if (stateLower === 'error' || stateLower === 'shutdown') return 'error';
+    if (stateLower === 'cancelled') return 'idle';
+    
+    // Par défaut, si on ne reconnaît pas l'état, on retourne idle
+    console.log(`⚠️ État inconnu: "${state}", défaut à idle`);
     return 'idle';
   }
 

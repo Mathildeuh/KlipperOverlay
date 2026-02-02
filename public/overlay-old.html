@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Klipper Overlay</title>
+  <link rel="stylesheet" href="/overlay.css">
+</head>
+<body>
+  <div id="overlay-container">
+    <!-- Status de connexion -->
+    <div id="connection-status" class="disconnected">
+      <span class="status-dot"></span>
+      <span class="status-text">Connexion...</span>
+    </div>
+
+    <!-- Thumbnail du print -->
+    <div id="thumbnail-container" style="display: none;">
+      <img id="thumbnail" src="" alt="Print preview">
+    </div>
+
+      <!-- Informations principales -->
+      <div id="main-info">
+        <!-- État de l'impression -->
+        <div class="info-row state-row">
+          <span class="label">État:</span>
+          <span class="value" id="state">Inactif</span>
+        </div>
+
+        <!-- Fichier -->
+        <div class="info-row">
+          <span class="label">Fichier:</span>
+          <span class="value filename" id="filename">-</span>
+        </div>
+
+        <!-- Progression -->
+        <div class="info-row progress-row">
+          <div>
+            <span class="label">Progression:</span>
+            <span class="value" id="progress">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Températures -->
+        <div class="temps-container">
+          <div class="temp-item">
+            <div class="temp-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+            </div>
+            <div class="temp-info">
+              <div class="temp-label">Buse</div>
+              <div class="temp-value">
+                <span id="extruder-temp">0</span>°C / 
+                <span id="extruder-target">0</span>°C
+              </div>
+            </div>
+          </div>
+
+          <div class="temp-item">
+            <div class="temp-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            </div>
+            <div class="temp-info">
+              <div class="temp-label">Plateau</div>
+              <div class="temp-value">
+                <span id="bed-temp">0</span>°C / 
+                <span id="bed-target">0</span>°C
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Temps -->
+        <div class="time-container">
+          <div class="time-item">
+            <span class="time-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Durée
+            </span>
+            <span class="time-value" id="duration">00:00:00</span>
+          </div>
+          <div class="time-item">
+            <span class="time-label">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 4px;"><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+              Restant
+            </span>
+            <span class="time-value" id="remaining">--:--:--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Button -->
+    <button id="history-btn" class="history-btn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      <span>Historique</span>
+    </button>
+
+    <!-- History Modal -->
+    <div id="history-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Historique des impressions</h2>
+          <button class="modal-close" id="modal-close" type="button">✕</button>
+        </div>
+        <div class="modal-stats" id="modal-stats">
+          <!-- Stats générées par JS -->
+        </div>
+        <div class="modal-list" id="modal-list">
+          <!-- Historique généré par JS -->
+        </div>
+      </div>
+    </div>
+
+  <script src="/overlay.js"></script>
+  <script>
+    // ===== History Management =====
+    const HISTORY_STORAGE_KEY = 'klipper_print_history';
+    const MAX_HISTORY_ITEMS = 50;
+
+    class PrintHistoryManager {
+      constructor() {
+        this.history = this.loadFromStorage();
+      }
+
+      loadFromStorage() {
+        try {
+          const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+          return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+          console.error('Erreur chargement historique:', error);
+          return [];
+        }
+      }
+
+      saveToStorage() {
+        try {
+          localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(this.history));
+        } catch (error) {
+          console.error('Erreur sauvegarde historique:', error);
+        }
+      }
+
+      addPrint(filename, duration, state) {
+        const item = {
+          id: `print_${Date.now()}`,
+          filename,
+          startTime: Date.now() - duration,
+          endTime: Date.now(),
+          duration,
+          state,
+          progress: state === 'completed' ? 100 : Math.random() * 80,
+          timestamp: new Date().toLocaleString('fr-FR')
+        };
+
+        this.history.unshift(item);
+        if (this.history.length > MAX_HISTORY_ITEMS) {
+          this.history = this.history.slice(0, MAX_HISTORY_ITEMS);
+        }
+        this.saveToStorage();
+      }
+
+      getStats() {
+        const completed = this.history.filter(p => p.state === 'completed').length;
+        const failed = this.history.filter(p => p.state === 'failed').length;
+        const cancelled = this.history.filter(p => p.state === 'cancelled').length;
+        const totalDuration = this.history.reduce((sum, p) => sum + p.duration, 0);
+        const successRate = this.history.length > 0 ? (completed / this.history.length) * 100 : 0;
+
+        return {
+          total: this.history.length,
+          completed,
+          failed,
+          cancelled,
+          successRate,
+          totalPrintTime: totalDuration
+        };
+      }
+    }
+
+    const historyManager = new PrintHistoryManager();
+
+    // ===== History Modal =====
+    const historyBtn = document.getElementById('history-btn');
+    const historyModal = document.getElementById('history-modal');
+    const modalClose = document.getElementById('modal-close');
+    const modalOverlay = document.querySelector('.modal-overlay');
+
+    function formatDuration(ms) {
+      const totalSeconds = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      
+      if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+      }
+      return `${minutes}m ${seconds}s`;
+    }
+
+    function openHistoryModal() {
+      const stats = historyManager.getStats();
+      
+      // Afficher les stats
+      const statsHtml = `
+        <div class="stat-item">
+          <div class="stat-label">Total</div>
+          <div class="stat-value">${stats.total}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Réussite</div>
+          <div class="stat-value">${stats.successRate.toFixed(0)}%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Réussis</div>
+          <div class="stat-value">${stats.completed}</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Temps total</div>
+          <div class="stat-value">${formatDuration(stats.totalPrintTime)}</div>
+        </div>
+      `;
+      document.getElementById('modal-stats').innerHTML = statsHtml;
+
+      // Afficher l'historique
+      let historyHtml = '';
+      if (historyManager.history.length === 0) {
+        historyHtml = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-text">Aucune impression enregistrée</div>
+          </div>
+        `;
+      } else {
+        historyHtml = historyManager.history.map(item => {
+          const icons = {
+            completed: '✓',
+            failed: '✕',
+            cancelled: '⊘'
+          };
+          return `
+            <div class="history-item">
+              <div class="history-item-icon">${icons[item.state]}</div>
+              <div class="history-item-content">
+                <div class="history-item-filename">${item.filename}</div>
+                <div class="history-item-details">
+                  <span class="history-item-state ${item.state}">${item.state}</span>
+                  <span>${formatDuration(item.duration)}</span>
+                  <span>${item.timestamp}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+      document.getElementById('modal-list').innerHTML = historyHtml;
+
+      historyModal.classList.remove('hidden');
+    }
+
+    function closeHistoryModal() {
+      historyModal.classList.add('hidden');
+    }
+
+    historyBtn.addEventListener('click', openHistoryModal);
+    modalClose.addEventListener('click', closeHistoryModal);
+    modalOverlay.addEventListener('click', closeHistoryModal);
+
+    // Fermer avec Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !historyModal.classList.contains('hidden')) {
+        closeHistoryModal();
+      }
+    });
+
+    // Ajouter des impressions de test (à commenter en prod)
+    // historyManager.addPrint('benchy.gcode', 3600000, 'completed');
+    // historyManager.addPrint('calibration.gcode', 1800000, 'failed');
+  </script>
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guide PWA - Klipper Overlay</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2322d3ee' width='100' height='100'/><text x='50' y='50' font-size='60' fill='white' text-anchor='middle' dominant-baseline='central'>⚙️</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      color: #e0e6ed;
+      line-height: 1.6;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+      color: #0a0e27;
+      padding: 40px 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(34, 211, 238, 0.2);
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .section {
+      background: #161b22;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border-left: 4px solid #22d3ee;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .section h2 {
+      color: #22d3ee;
+      margin-bottom: 20px;
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section h3 {
+      color: #34d399;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .step {
+      background: #0a0e27;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border-left: 3px solid #34d399;
+    }
+
+    .step strong {
+      color: #22d3ee;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    .feature-card {
+      background: #0a0e27;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid #22d3ee;
+      text-align: center;
+    }
+
+    .feature-card .icon {
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    .feature-card h4 {
+      color: #22d3ee;
+      margin-bottom: 10px;
+    }
+
+    .code-block {
+      background: #0a0e27;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 12px;
+      color: #22d3ee;
+      border-left: 3px solid #f59e0b;
+      margin: 10px 0;
+    }
+
+    .button {
+      display: inline-block;
+      background: #22d3ee;
+      color: #0a0e27;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      margin: 10px 10px 10px 0;
+      transition: all 0.3s ease;
+    }
+
+    .button:hover {
+      background: #06b6d4;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
+    }
+
+    .button.secondary {
+      background: transparent;
+      border: 2px solid #22d3ee;
+      color: #22d3ee;
+    }
+
+    .button.secondary:hover {
+      background: rgba(34, 211, 238, 0.1);
+    }
+
+    .warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-left: 4px solid #f59e0b;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+
+    .success {
+      background: rgba(52, 211, 153, 0.1);
+      border-left: 4px solid #34d399;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+
+    .info {
+      background: rgba(34, 211, 238, 0.1);
+      border-left: 4px solid #22d3ee;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+
+    .qr-section {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .qr-section img {
+      max-width: 300px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(34, 211, 238, 0.2);
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .container {
+        padding: 20px 15px;
+      }
+
+      .section {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>📱 Guide PWA - Klipper Overlay</h1>
+    <p>Installez l'application sur votre téléphone ou ordinateur</p>
+  </div>
+
+  <div class="container">
+    <!-- Section 1: Qu'est-ce qu'une PWA -->
+    <div class="section">
+      <h2>❓ Qu'est-ce qu'une PWA ?</h2>
+      <p>Une Progressive Web App (PWA) est une application web qui peut être installée comme une application native sur votre appareil. Klipper Overlay est une PWA, ce qui signifie:</p>
+      
+      <div class="feature-grid">
+        <div class="feature-card">
+          <div class="icon">⚡</div>
+          <h4>Rapide</h4>
+          <p>Chargement instantané et réactif</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">📴</div>
+          <h4>Hors ligne</h4>
+          <p>Fonctionne sans connexion Internet</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🔔</div>
+          <h4>Notifications</h4>
+          <p>Alertes en temps réel</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">🏠</div>
+          <h4>Accueil</h4>
+          <p>Icône sur l'écran d'accueil</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Installation Mobile -->
+    <div class="section">
+      <h2>📱 Installation sur Mobile (iOS/Android)</h2>
+      
+      <h3>Android (Chrome, Firefox, etc.)</h3>
+      <div class="step">
+        <strong>1.</strong> Ouvrez <code>http://your-printer-ip:8080/webcam</code> sur votre téléphone
+      </div>
+      <div class="step">
+        <strong>2.</strong> Appuyez sur le menu (⋮) en haut à droite
+      </div>
+      <div class="step">
+        <strong>3.</strong> Sélectionnez <strong>"Installer l'application"</strong> ou <strong>"Ajouter à l'écran d'accueil"</strong>
+      </div>
+      <div class="step">
+        <strong>4.</strong> Confirmez en appuyant sur <strong>"Installer"</strong>
+      </div>
+      <div class="success">
+        ✅ L'application apparaît maintenant sur votre écran d'accueil !
+      </div>
+
+      <h3>iPhone/iPad (Safari)</h3>
+      <div class="step">
+        <strong>1.</strong> Ouvrez <code>http://your-printer-ip:8080/webcam</code> sur Safari
+      </div>
+      <div class="step">
+        <strong>2.</strong> Appuyez sur <strong>Partager</strong> (carré avec flèche)
+      </div>
+      <div class="step">
+        <strong>3.</strong> Sélectionnez <strong>"Sur l'écran d'accueil"</strong>
+      </div>
+      <div class="step">
+        <strong>4.</strong> Entrez un nom et appuyez sur <strong>"Ajouter"</strong>
+      </div>
+      <div class="success">
+        ✅ L'application est maintenant accessible depuis votre écran d'accueil !
+      </div>
+    </div>
+
+    <!-- Section 3: Installation Desktop -->
+    <div class="section">
+      <h2>💻 Installation sur Desktop</h2>
+      
+      <h3>Chrome / Edge / Brave</h3>
+      <div class="step">
+        <strong>1.</strong> Ouvrez <code>http://your-printer-ip:8080/webcam</code>
+      </div>
+      <div class="step">
+        <strong>2.</strong> Regardez la barre d'adresse - une <strong>icône d'installation</strong> (⊞↓) devrait s'afficher
+      </div>
+      <div class="step">
+        <strong>3.</strong> Cliquez sur l'icône d'installation
+      </div>
+      <div class="step">
+        <strong>4.</strong> Confirmez le nom de l'application et cliquez <strong>"Installer"</strong>
+      </div>
+      <div class="step">
+        <strong>Alternativement :</strong> Menu ⋮ → <strong>"Installer Klipper Overlay"</strong>
+      </div>
+      <div class="success">
+        ✅ L'application s'ouvre maintenant dans sa propre fenêtre !
+      </div>
+
+      <h3>Firefox</h3>
+      <div class="info">
+        Firefox supporte les PWA via le menu. Menu ☰ → <strong>"Installer Klipper Overlay"</strong>
+      </div>
+    </div>
+
+    <!-- Section 4: Fonctionnalités -->
+    <div class="section">
+      <h2>✨ Fonctionnalités Disponibles</h2>
+      
+      <h3>✅ Fonctionne Hors Ligne</h3>
+      <p>Les pages suivantes sont cachées automatiquement pour fonctionner sans Internet :</p>
+      <ul>
+        <li>📺 Page webcam (/webcam)</li>
+        <li>📊 Overlay de status (/overlay)</li>
+        <li>🎨 Feuilles de styles (CSS)</li>
+        <li>⚙️ Scripts JavaScript</li>
+      </ul>
+      <div class="warning">
+        ⚠️ <strong>Attention :</strong> Le flux vidéo en direct et les données de statut en temps réel nécessitent une connexion Internet active.
+      </div>
+
+      <h3>💾 Sauvegarde Locale</h3>
+      <p>Les données suivantes sont sauvegardées sur votre appareil :</p>
+      <ul>
+        <li>📜 Historique des impressions</li>
+        <li>⚙️ Paramètres de l'overlay</li>
+        <li>🎨 Préférences d'affichage</li>
+      </ul>
+
+      <h3>🔔 Notifications</h3>
+      <p>Recevez des notifications quand :</p>
+      <ul>
+        <li>L'impression se termine ✓</li>
+        <li>Une erreur se produit ✕</li>
+        <li>L'imprimante se connecte/déconnecte</li>
+      </ul>
+    </div>
+
+    <!-- Section 5: Utilisation -->
+    <div class="section">
+      <h2>🎮 Comment Utiliser</h2>
+      
+      <h3>Navigation</h3>
+      <p>Une fois installée, l'application fonctionne comme une app native :</p>
+      <ul>
+        <li>Pas de barre d'adresse (interface épurée)</li>
+        <li>Accès rapide depuis l'écran d'accueil</li>
+        <li>Boutons back/forward du système</li>
+        <li>Gestes tactiles natifs (pinch-zoom, swipe)</li>
+      </ul>
+
+      <h3>Historique des Impressions</h3>
+      <div class="step">
+        1. Cliquez sur <strong>📜 Historique</strong> dans l'overlay
+      </div>
+      <div class="step">
+        2. Consultez vos statistiques (total, taux de réussite, temps total)
+      </div>
+      <div class="step">
+        3. Visualisez la liste complète de vos impressions passées
+      </div>
+      <div class="info">
+        💡 Les données d'historique sont sauvegardées localement sur votre appareil
+      </div>
+
+      <h3>Zoom et Affichage</h3>
+      <ul>
+        <li>🔍 <strong>Zoom :</strong> Pinch sur mobile, ou boutons + / -</li>
+        <li>⛶ <strong>Plein écran :</strong> Cliquez le bouton 🔲</li>
+        <li>📐 <strong>Paramètres :</strong> Menu de configuration disponible</li>
+      </ul>
+    </div>
+
+    <!-- Section 6: Dépannage -->
+    <div class="section">
+      <h2>🔧 Dépannage</h2>
+      
+      <h3>❌ L'app ne s'installe pas</h3>
+      <div class="warning">
+        Assurez-vous que :
+        <ul>
+          <li>✓ Vous utilisez HTTPS ou localhost</li>
+          <li>✓ Le navigateur supporte les PWA</li>
+          <li>✓ La page manifest.json est valide</li>
+          <li>✓ Les icônes d'app sont présentes</li>
+        </ul>
+      </div>
+
+      <h3>❌ Les données d'historique ne se sauvegardent pas</h3>
+      <div class="warning">
+        <ul>
+          <li>✓ Vérifiez que localStorage n'est pas désactivé</li>
+          <li>✓ Vérifiez l'espace disponible sur l'appareil</li>
+          <li>✓ En mode privé/incognito, les données ne sont pas persistantes</li>
+        </ul>
+      </div>
+
+      <h3>❌ Le webcam/status ne charge pas hors ligne</h3>
+      <div class="info">
+        C'est normal ! Les données en temps réel nécessitent Internet. Seules les pages statiques fonctionnent hors ligne.
+      </div>
+
+      <h3>Réinitialiser l'Application</h3>
+      <div class="step">
+        <strong>1.</strong> Supprimez l'application (écran d'accueil ou paramètres)
+      </div>
+      <div class="step">
+        <strong>2.</strong> Videz le cache du navigateur ou le cache de l'application
+      </div>
+      <div class="step">
+        <strong>3.</strong> Réinstallez depuis <code>http://your-printer-ip:8080/webcam</code>
+      </div>
+    </div>
+
+    <!-- Section 7: Personnalisation -->
+    <div class="section">
+      <h2>🎨 Personnalisation</h2>
+      
+      <p>Vous pouvez personnaliser votre PWA en éditant le fichier <code>manifest.json</code> :</p>
+      
+      <div class="code-block">
+{
+  "name": "Klipper Overlay",
+  "theme_color": "#22d3ee",
+  "background_color": "#0a0e27",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192" },
+    { "src": "/icon-512.png", "sizes": "512x512" }
+  ]
+}
+      </div>
+
+      <h3>Changer la Couleur Thème</h3>
+      <p>Modifiez <code>theme_color</code> pour changer la couleur d'en-tête :</p>
+      <ul>
+        <li>Cyan actuel : <code>#22d3ee</code></li>
+        <li>Rouge : <code>#f43f5e</code></li>
+        <li>Vert : <code>#34d399</code></li>
+        <li>Orange : <code>#f59e0b</code></li>
+      </ul>
+
+      <h3>Changer les Icônes</h3>
+      <p>Remplacez les fichiers <code>/public/icon-192.png</code> et <code>/public/icon-512.png</code> par vos propres icônes.</p>
+    </div>
+
+    <!-- Section 8: Raccourcis -->
+    <div class="section">
+      <h2>⌨️ Raccourcis Clavier</h2>
+      
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #22d3ee;"><strong>Escape</strong></td>
+          <td style="padding: 10px; border-bottom: 1px solid #22d3ee;">Fermer la modal d'historique</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #22d3ee;"><strong>H</strong></td>
+          <td style="padding: 10px; border-bottom: 1px solid #22d3ee;">Afficher/Masquer la sidebar</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border-bottom: 1px solid #22d3ee;"><strong>F</strong></td>
+          <td style="padding: 10px; border-bottom: 1px solid #22d3ee;">Plein écran (Fullscreen)</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px;"><strong>+/-</strong></td>
+          <td style="padding: 10px;">Zoomer / Dézommer</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Section 9: Liens Utiles -->
+    <div class="section">
+      <h2>🔗 Accès Rapide</h2>
+      
+      <a href="/" class="button">🏠 Accueil</a>
+      <a href="/webcam" class="button">📺 Webcam</a>
+      <a href="/overlay" class="button">📊 Overlay</a>
+      <a href="/test-history.html" class="button">🧪 Test Historique</a>
+      
+      <div class="info" style="margin-top: 30px;">
+        💡 Pensez à remplacer <code>your-printer-ip</code> par l'adresse IP réelle de votre imprimante
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Afficher l'IP locale pour les tests
+    console.log('IP Locale: http://localhost:8080');
+    console.log('Les URLs à utiliser:');
+    console.log('  - http://your-printer-ip:8080/webcam');
+    console.log('  - http://your-printer-ip:8080/overlay');
+  </script>
+</body>
+</html>

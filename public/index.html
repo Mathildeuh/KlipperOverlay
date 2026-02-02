@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Klipper Overlay - Application d'affichage en temps réel pour imprimantes 3D Klipper">
+  <title>Klipper Overlay</title>
+  <meta name="theme-color" content="#22d3ee">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%2322d3ee' width='100' height='100'/><text x='50' y='50' font-size='60' fill='white' text-anchor='middle' dominant-baseline='central'>⚙️</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      color: #e0e6ed;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+      color: #0a0e27;
+      padding: 60px 20px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(34, 211, 238, 0.2);
+    }
+
+    .header h1 {
+      font-size: 48px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 18px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+
+    .header .version {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      flex-grow: 1;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: #161b22;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      border: 1px solid #22d3ee;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(34, 211, 238, 0.2);
+      border-color: #06b6d4;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+      color: #0a0e27;
+      padding: 20px;
+      font-size: 40px;
+      text-align: center;
+    }
+
+    .card-content {
+      padding: 25px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #22d3ee;
+    }
+
+    .card-description {
+      font-size: 14px;
+      color: #b0b8c1;
+      margin-bottom: 20px;
+      flex-grow: 1;
+    }
+
+    .card-link {
+      display: inline-block;
+      background: #22d3ee;
+      color: #0a0e27;
+      padding: 12px 24px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 600;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .card-link:hover {
+      background: #06b6d4;
+      transform: translateX(4px);
+    }
+
+    .section-title {
+      font-size: 28px;
+      color: #22d3ee;
+      margin-top: 40px;
+      margin-bottom: 25px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #22d3ee;
+    }
+
+    .features {
+      background: #161b22;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 40px;
+      border-left: 4px solid #22d3ee;
+    }
+
+    .features h3 {
+      color: #22d3ee;
+      margin-bottom: 20px;
+    }
+
+    .features ul {
+      list-style: none;
+      columns: 2;
+      column-gap: 40px;
+    }
+
+    .features li {
+      margin-bottom: 12px;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .features li:before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #34d399;
+      font-weight: bold;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 30px 20px;
+      border-top: 1px solid #22d3ee;
+      color: #b0b8c1;
+      font-size: 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #22d3ee;
+      color: #0a0e27;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin: 25px 0;
+    }
+
+    .status-item {
+      background: #0a0e27;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 3px solid #34d399;
+    }
+
+    .status-item strong {
+      color: #22d3ee;
+    }
+
+    @media (max-width: 768px) {
+      .header h1 {
+        font-size: 36px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .features ul {
+        columns: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>⚙️ Klipper Overlay</h1>
+    <p>Affichage en temps réel pour imprimantes 3D Klipper</p>
+    <div class="version">v2.0 • PWA Ready • Responsive Design</div>
+  </div>
+
+  <div class="container">
+    <!-- Section Principale -->
+    <h2 class="section-title">🚀 Accès Rapide</h2>
+    <div class="grid">
+      <div class="card">
+        <div class="card-header">📺</div>
+        <div class="card-content">
+          <div class="card-title">Webcam Live</div>
+          <div class="card-description">Flux vidéo en direct de votre imprimante 3D avec contrôles de zoom et affichage plein écran.</div>
+          <a href="/webcam" class="card-link">Ouvrir Webcam →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">📊</div>
+        <div class="card-content">
+          <div class="card-title">Overlay Status</div>
+          <div class="card-description">Affichage des infos de l'imprimante (température, progression, temps) pour OBS ou intégration.</div>
+          <a href="/overlay" class="card-link">Voir l'Overlay →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">📱</div>
+        <div class="card-content">
+          <div class="card-title">Guide PWA</div>
+          <div class="card-description">Instructions complètes pour installer Klipper Overlay comme application native sur votre téléphone.</div>
+          <a href="/pwa-guide.html" class="card-link">Lire le Guide →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">🧪</div>
+        <div class="card-content">
+          <div class="card-title">Test Historique</div>
+          <div class="card-description">Testez et explorez la fonctionnalité d'historique des impressions avec des données fictives.</div>
+          <a href="/test-history.html" class="card-link">Tester l'Historique →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">⚙️</div>
+        <div class="card-content">
+          <div class="card-title">Configuration</div>
+          <div class="card-description">Accédez à l'API de configuration pour personnaliser l'affichage de l'overlay.</div>
+          <a href="/api/config" class="card-link">Configuration API →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">📖</div>
+        <div class="card-content">
+          <div class="card-title">Documentation</div>
+          <div class="card-description">Documentation complète et guide d'utilisation pour tous les paramètres.</div>
+          <a href="/README.md" class="card-link">Lire les Docs →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statut du Système -->
+    <h2 class="section-title">🔍 État du Système</h2>
+    <div class="status-grid">
+      <div class="status-item">
+        <strong>✅ Interface Web</strong><br>
+        <small>Klipper Overlay est en ligne</small>
+      </div>
+      <div class="status-item">
+        <strong>📡 Moonraker</strong><br>
+        <small id="moonraker-status">Vérification...</small>
+      </div>
+      <div class="status-item">
+        <strong>💾 Stockage Local</strong><br>
+        <small id="storage-status">Disponible</small>
+      </div>
+      <div class="status-item">
+        <strong>� Service Worker</strong><br>
+        <small id="sw-status">Vérification...</small>
+      </div>
+    </div>
+
+    <!-- Fonctionnalités -->
+    <h2 class="section-title">✨ Fonctionnalités</h2>
+    <div class="features">
+      <h3>Principales</h3>
+      <ul>
+        <li>📺 Flux webcam en temps réel</li>
+        <li>🌡️ Affichage des températures (buse/plateau)</li>
+        <li>📊 Progression de l'impression</li>
+        <li>⏱️ Temps écoulé et estimation d'arrivée</li>
+        <li>� Notifications en temps réel</li>
+        <li>� Historique complet des impressions</li>
+        <li>📱 Design responsive (mobile/desktop)</li>
+        <li>🔒 Fonctionne hors ligne (PWA)</li>
+        <li>🎨 Thème cyberpunk moderne</li>
+        <li>⚡ Très rapide et léger</li>
+      </ul>
+    </div>
+
+    <div class="features">
+      <h3>Contrôles</h3>
+      <ul>
+        <li>🔍 Zoom avant/arrière (Pinch sur mobile)</li>
+        <li>⛶ Mode plein écran</li>
+        <li>🔄 Actualisation en temps réel</li>
+        <li>📋 Affichage des statistiques</li>
+        <li>☰ Sidebar masquable</li>
+        <li>🎯 Mode compact pour OBS</li>
+        <li>⌨️ Raccourcis clavier</li>
+        <li>🔐 Configuration personnalisable</li>
+      </ul>
+    </div>
+
+    <!-- Guide Rapide -->
+    <h2 class="section-title">🎯 Guide Rapide</h2>
+    <div class="features">
+      <h3>Étapes pour commencer</h3>
+      <ol style="padding-left: 20px;">
+        <li style="margin-bottom: 10px;">
+          <strong>Ouvrez la Webcam</strong> : Visitez <code style="background: #0a0e27; padding: 2px 6px; border-radius: 3px;">/webcam</code> pour voir le flux vidéo
+        </li>
+        <li style="margin-bottom: 10px;">
+          <strong>Intégrez dans OBS</strong> : Ajoutez <code style="background: #0a0e27; padding: 2px 6px; border-radius: 3px;">/overlay</code> comme source navigateur
+        </li>
+        <li style="margin-bottom: 10px;">
+          <strong>Installez la PWA</strong> : Suivez le <a href="/pwa-guide.html" style="color: #22d3ee; text-decoration: underline;">Guide PWA</a> pour installer sur votre téléphone
+        </li>
+        <li style="margin-bottom: 10px;">
+          <strong>Consultez l'Historique</strong> : Cliquez sur "Historique" dans l'overlay pour voir vos impressions passées
+        </li>
+      </ol>
+    </div>
+
+    <!-- URLs Paramétrées -->
+    <h2 class="section-title">🔗 URLs Avancées</h2>
+    <div class="features">
+      <h3>Paramètres d'Overlay</h3>
+      <div style="font-family: monospace; font-size: 12px; background: #0a0e27; padding: 15px; border-radius: 6px; overflow-x: auto;">
+        <div>/overlay?scale=2.0&compact=1&pos=tl</div>
+        <div style="margin-top: 10px; opacity: 0.7;">
+          <strong>Paramètres :</strong><br>
+          • scale=N : Zoom (ex: 1.5, 2.0)<br>
+          • compact=1 : Mode compact<br>
+          • pos=tl|tr|bl|br : Position (top-left, top-right, etc.)<br>
+          • thumbnail=0 : Masquer la miniature<br>
+          • file=0 : Masquer le nom de fichier<br>
+          • progress_bar=0 : Masquer la barre de progression<br>
+          • state=0 : Masquer l'état<br>
+          • nozzle=0 : Masquer la température de la buse<br>
+          • bed=0 : Masquer la température du plateau<br>
+          • timer=0 : Masquer le temps écoulé<br>
+          • eta=0 : Masquer le temps restant
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>⚙️ Klipper Overlay • <a href="https://github.com" style="color: #22d3ee; text-decoration: none;">GitHub</a> • Made with ❤️ for 3D printing enthusiasts</p>
+    <p style="margin-top: 10px; opacity: 0.6;">Version 2.0 • Progressive Web App • Service Worker Ready</p>
+  </div>
+
+  <script>
+    // Vérifier l'état du système
+    async function checkStatus() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+        document.getElementById('moonraker-status').textContent = 
+          data.success ? '✅ Connecté à Moonraker' : '⚠️ Déconnecté';
+      } catch (error) {
+        document.getElementById('moonraker-status').textContent = '❌ Erreur de connexion';
+      }
+
+      // Vérifier le localStorage
+      try {
+        localStorage.setItem('test', '1');
+        localStorage.removeItem('test');
+        document.getElementById('storage-status').textContent = 'Disponible';
+      } catch (error) {
+        document.getElementById('storage-status').textContent = 'Limité ou désactivé';
+      }
+
+      // Vérifier le Service Worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(registrations => {
+          document.getElementById('sw-status').textContent = 
+            registrations.length > 0 ? '✅ Actif' : '⏳ Prêt à être installé';
+        });
+      }
+    }
+
+    // Enregistrer le Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(registration => {
+        console.log('✅ Service Worker enregistré:', registration);
+      }).catch(error => {
+        console.log('⚠️ Erreur Service Worker:', error);
+      });
+    }
+
+    checkStatus();
+    setInterval(checkStatus, 5000);
+
+    console.log('🚀 Klipper Overlay chargé');
+    console.log('📱 Pour installer la PWA, visitez /pwa-guide.html');
+  </script>
+</body>
+</html>

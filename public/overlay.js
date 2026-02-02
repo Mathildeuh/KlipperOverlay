@@ -1,251 +1,382 @@
-// Configuration depuis les paramètres URL
-const urlParams = new URLSearchParams(window.location.search);
-const scale = parseFloat(urlParams.get('scale') || '1.0');
-const compact = urlParams.get('compact') === '1';
-const position = urlParams.get('pos') || '';
+// ===== Print History Manager =====
+class PrintHistory {
+  constructor() {
+    this.key = 'klipper_history';
+    this.max = 50;
+    this.items = this.load();
+  }
 
-// Paramètres pour afficher/masquer les blocs
-const urlConfig = {
-  showThumbnail: urlParams.get('thumbnail') !== '0',
-  showFilename: urlParams.get('file') !== '0',
-  showProgress: urlParams.get('progress_bar') !== '0',
-  showState: urlParams.get('state') !== '0',
-  showNozzle: urlParams.get('nozzle') !== '0',
-  showBed: urlParams.get('bed') !== '0',
-  showTimer: urlParams.get('timer') !== '0',
-  showEta: urlParams.get('eta') !== '0',
-  showStatus: urlParams.get('status') !== '0',
-};
-
-// Appliquer les paramètres
-if (scale !== 1.0) {
-  document.getElementById('overlay-container').style.transform = `scale(${scale})`;
-}
-if (compact) {
-  document.body.classList.add('compact');
-}
-if (position) {
-  document.body.classList.add(`pos-${position}`);
-}
-
-// Éléments DOM
-const elements = {
-  connectionStatus: document.getElementById('connection-status'),
-  statusText: document.querySelector('.status-text'),
-  state: document.getElementById('state'),
-  filename: document.getElementById('filename'),
-  progress: document.getElementById('progress'),
-  progressFill: document.getElementById('progress-fill'),
-  extruderTemp: document.getElementById('extruder-temp'),
-  extruderTarget: document.getElementById('extruder-target'),
-  bedTemp: document.getElementById('bed-temp'),
-  bedTarget: document.getElementById('bed-target'),
-  duration: document.getElementById('duration'),
-  remaining: document.getElementById('remaining'),
-  thumbnail: document.getElementById('thumbnail'),
-  thumbnailContainer: document.getElementById('thumbnail-container'),
-  mainInfo: document.getElementById('main-info'),
-};
-
-// Configuration de l'overlay
-let overlayConfig = {
-  showThumbnail: true,
-  showFilename: true,
-  showProgress: true,
-  showTemperatures: true,
-  showTimes: true,
-  showStatus: true,
-  showState: true,
-  showNozzle: true,
-  showBed: true,
-  showTimer: true,
-  showEta: true,
-};
-
-// Fonction pour formater le temps en HH:MM:SS
-function formatTime(seconds) {
-  if (!seconds || seconds < 0) return '--:--:--';
-  
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = Math.floor(seconds % 60);
-  
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-// Charger la configuration de l'overlay
-async function loadConfig() {
-  try {
-    const response = await fetch('/api/config');
-    if (response.ok) {
-      const data = await response.json();
-      overlayConfig = { ...overlayConfig, ...data.data };
-      console.log('✅ Configuration chargée:', overlayConfig);
-      
-      // Appliquer les paramètres URL (priorité sur l'API)
-      Object.keys(urlConfig).forEach(key => {
-        overlayConfig[key] = urlConfig[key];
-      });
-      console.log('📍 Configuration avec paramètres URL appliquée:', overlayConfig);
-      
-      applyConfig();
+  load() {
+    try {
+      return JSON.parse(localStorage.getItem(this.key) || '[]');
+    } catch {
+      return [];
     }
-  } catch (error) {
-    console.log('⚠️ Impossible de charger la configuration, utilisation des valeurs par défaut');
-    // Appliquer juste les paramètres URL
-    Object.keys(urlConfig).forEach(key => {
-      overlayConfig[key] = urlConfig[key];
+  }
+
+  save() {
+    try {
+      localStorage.setItem(this.key, JSON.stringify(this.items));
+    } catch (e) {
+      console.error('Save error:', e);
+    }
+  }
+
+  add(filename, duration, state) {
+    this.items.unshift({
+      id: Date.now(),
+      filename,
+      duration,
+      state,
+      timestamp: new Date().toLocaleString('fr-FR')
     });
-    applyConfig();
+    
+    if (this.items.length > this.max) {
+      this.items.length = this.max;
+    }
+    
+    this.save();
+  }
+
+  getStats() {
+    const completed = this.items.filter(i => i.state === 'completed').length;
+    const total = this.items.length;
+    const time = this.items.reduce((sum, i) => sum + (i.duration || 0), 0);
+    
+    return {
+      total,
+      completed,
+      success: total > 0 ? Math.round((completed / total) * 100) : 0,
+      time
+    };
   }
 }
 
-// Appliquer la configuration (afficher/masquer les blocs)
-function applyConfig() {
-  // Thumbnail
-  const thumbnailSection = elements.thumbnailContainer?.parentElement;
-  if (thumbnailSection) thumbnailSection.style.display = overlayConfig.showThumbnail ? '' : 'none';
-  
-  // État
-  const stateRow = document.querySelector('.state-row');
-  if (stateRow) stateRow.style.display = overlayConfig.showState ? '' : 'none';
-}
+// ===== Utilities =====
+const formatTime = (sec) => {
+  if (!sec || sec < 0) return '--:--';
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
 
-// Fonction pour mettre à jour l'UI
-function updateUI(data) {
-  if (!data || !data.success) {
+const formatDuration = (ms) => {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h}h` : `${m}m`;
+};
+
+const now = () => new Date().toLocaleTimeString('fr-FR', { 
+  hour: '2-digit', 
+  minute: '2-digit', 
+  second: '2-digit' 
+});
+
+// ===== DOM Elements =====
+const $ = (id) => document.getElementById(id);
+
+const connectionStatus = $('connection-status');
+const statusLabel = $('status-label');
+const stateBadge = $('state-badge');
+const stateText = $('state-text');
+const stateIcon = $('state-icon');
+const filename = $('filename');
+const progressValue = $('progress-value');
+const progressFill = $('progress-fill');
+const duration = $('duration');
+const remaining = $('remaining');
+const extruderTemp = $('extruder-temp');
+const extruderTarget = $('extruder-target');
+const bedTemp = $('bed-temp');
+const bedTarget = $('bed-target');
+const nozzleRing = $('nozzle-ring');
+const bedRing = $('bed-ring');
+const lastUpdate = $('last-update');
+
+// Buttons
+const statsBtn = $('stats-btn');
+const statsModal = $('stats-modal');
+const statsBackdrop = $('stats-backdrop');
+const statsClose = $('stats-close');
+const viewHistoryBtn = $('view-history');
+
+const historyModal = $('history-modal');
+const historyBackdrop = $('history-backdrop');
+const historyClose = $('history-close');
+const historyList = $('history-list');
+
+// Stats elements
+const statTotal = $('stat-total');
+const statSuccess = $('stat-success');
+const statCompleted = $('stat-completed');
+const statTime = $('stat-time');
+
+// ===== State =====
+const history = new PrintHistory();
+let lastState = null;
+let lastFilename = null;
+
+const stateConfig = {
+  idle: {
+    icon: '<rect x="3" y="3" width="18" height="18" rx="2"/>',
+    text: 'Inactif',
+    attr: 'idle'
+  },
+  printing: {
+    icon: '<circle cx="12" cy="12" r="10"/><polyline points="10 8 16 12 10 16 10 8"/>',
+    text: 'Impression',
+    attr: 'printing'
+  },
+  paused: {
+    icon: '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>',
+    text: 'Pause',
+    attr: 'paused'
+  },
+  error: {
+    icon: '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+    text: 'Erreur',
+    attr: 'error'
+  },
+  disconnected: {
+    icon: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    text: 'Déconnecté',
+    attr: 'disconnected'
+  }
+};
+
+// ===== Connection Status =====
+const setConnected = (connected) => {
+  if (connected) {
+    connectionStatus.classList.add('connected');
+    connectionStatus.classList.remove('disconnected');
+    statusLabel.textContent = 'Connecté';
+  } else {
+    connectionStatus.classList.remove('connected');
+    connectionStatus.classList.add('disconnected');
+    statusLabel.textContent = 'Déconnecté';
+  }
+};
+
+// ===== Update Temperature Ring =====
+const updateRing = (ring, current, target) => {
+  if (!ring || target === 0) {
+    ring.style.strokeDashoffset = '150.8';
+    return;
+  }
+  
+  const percent = Math.min(100, (current / target) * 100);
+  const circumference = 150.8;
+  const offset = circumference - (percent / 100) * circumference;
+  
+  ring.style.strokeDashoffset = offset;
+};
+
+// ===== Update UI =====
+const updateUI = (data) => {
+  console.log('📥 Données reçues:', data);
+  
+  if (!data?.success) {
     setDisconnected();
     return;
   }
 
   const status = data.data;
-  
-  // Mise à jour du status de connexion
+  console.log('📊 État du status:', status.state, status);
+
   if (status.state === 'disconnected') {
     setDisconnected();
     return;
   }
-  
-  elements.connectionStatus.className = 'connected';
-  elements.statusText.textContent = 'Connecté';
 
-  // État
-  elements.state.textContent = getStateLabel(status.state);
-  elements.state.className = `value state-${status.state}`;
-  
-  // Fichier - extraire juste le nom de base (avant le premier underscore)
-  let displayFilename = status.filename || 'Aucun';
-  if (displayFilename !== 'Aucun') {
-    // Enlever l'extension .gcode
-    displayFilename = displayFilename.replace(/\.gcode$/i, '');
-    // Garder juste la partie avant le premier underscore (nom du modèle)
-    displayFilename = displayFilename.split('_')[0];
-  }
-  elements.filename.textContent = displayFilename;
-  if (elements.filename.parentElement) {
-    elements.filename.parentElement.parentElement.style.display = overlayConfig.showFilename ? '' : 'none';
-  }
+  setConnected(true);
 
-  // Progression
-  const progressValue = Math.round(status.progress || 0);
-  elements.progress.textContent = `${progressValue}%`;
-  elements.progressFill.style.width = `${progressValue}%`;
-  if (elements.progress.parentElement) {
-    elements.progress.parentElement.parentElement.style.display = overlayConfig.showProgress ? '' : 'none';
-    const progressBar = elements.progress.parentElement.parentElement.nextElementSibling;
-    if (progressBar) progressBar.style.display = overlayConfig.showProgress ? '' : 'none';
+  // State change detection
+  if (lastState !== status.state) {
+    console.log(`State: ${lastState} → ${status.state}`);
+
+    if ((lastState === 'printing' || lastState === 'paused') && status.state === 'idle') {
+      const dur = status.printDuration ? status.printDuration * 1000 : 0;
+      const file = lastFilename || status.filename || 'Unknown';
+      history.add(file, dur, 'completed');
+      console.log('✓ Print saved:', file);
+      
+      filename.textContent = 'Aucune impression';
+      progressValue.textContent = '0%';
+      progressFill.style.width = '0%';
+      duration.textContent = '00:00';
+      
+      lastFilename = null;
+    }
+
+    lastState = status.state;
   }
 
-  // Températures - Buse
-  elements.extruderTemp.textContent = Math.round(status.extruderTemp);
-  elements.extruderTarget.textContent = Math.round(status.extruderTarget);
-  const nozzleItem = elements.extruderTemp.closest('.temp-item');
-  if (nozzleItem) nozzleItem.style.display = overlayConfig.showNozzle ? '' : 'none';
+  // Update state badge
+  const config = stateConfig[status.state] || stateConfig.idle;
+  stateIcon.innerHTML = config.icon;
+  stateText.textContent = config.text;
+  stateBadge.setAttribute('data-state', config.attr);
 
-  // Températures - Plateau
-  elements.bedTemp.textContent = Math.round(status.bedTemp);
-  elements.bedTarget.textContent = Math.round(status.bedTarget);
-  const bedItem = elements.bedTemp.closest('.temp-item');
-  if (bedItem) bedItem.style.display = overlayConfig.showBed ? '' : 'none';
-
-  // Temps
-  elements.duration.textContent = formatTime(status.printDuration);
-  elements.remaining.textContent = formatTime(status.timeRemaining);
+  // Filename
+  let file = status.filename || 'Aucune impression';
+  lastFilename = status.filename;
   
-  // Affichage sélectif des temps
-  const timeItems = document.querySelectorAll('.time-item');
-  if (timeItems.length >= 2) {
-    timeItems[0].style.display = overlayConfig.showTimer ? '' : 'none';      // Durée
-    timeItems[1].style.display = overlayConfig.showEta ? '' : 'none';        // Restant
+  if (file !== 'Aucune impression' && status.state !== 'idle') {
+    file = file.replace(/\.gcode$/i, ''); // Enlever .gcode
+    file = file.replace(/_(?:PLA|ABS|PETG|TPU|Nylon).*$/i, ''); // Enlever matériau et profil
+    file = file.replace(/_/g, ' '); // Remplacer _ par espaces
+  } else if (status.state === 'idle') {
+    file = 'Aucune impression';
   }
   
-  // Masquer le conteneur si aucun temps n'est affiché
-  const timeContainer = document.querySelector('.time-container');
-  if (timeContainer) {
-    const showAnyTime = overlayConfig.showTimer || overlayConfig.showEta;
-    timeContainer.style.display = showAnyTime ? '' : 'none';
-  }
+  filename.textContent = file;
 
-  // Thumbnail
-  if (status.thumbnail && overlayConfig.showThumbnail) {
-    elements.thumbnail.src = status.thumbnail;
-    elements.thumbnail.style.display = 'block';
-  } else {
-    elements.thumbnail.style.display = 'none';
-  }
-}
+  // Progress
+  const prog = status.state === 'idle' ? 0 : Math.round(status.progress || 0);
+  progressValue.textContent = `${prog}%`;
+  progressFill.style.width = `${prog}%`;
 
-// État déconnecté
-function setDisconnected() {
-  elements.connectionStatus.className = 'disconnected';
-  elements.statusText.textContent = 'Déconnecté';
-  elements.state.textContent = 'Déconnecté';
-  elements.state.className = 'value state-disconnected';
+  // Times
+  duration.textContent = formatTime(status.printDuration);
+  remaining.textContent = formatTime(status.timeRemaining);
+
+  // Temperatures
+  extruderTemp.textContent = Math.round(status.extruderTemp || 0);
+  extruderTarget.textContent = Math.round(status.extruderTarget || 0);
+  bedTemp.textContent = Math.round(status.bedTemp || 0);
+  bedTarget.textContent = Math.round(status.bedTarget || 0);
+
+  updateRing(nozzleRing, status.extruderTemp, status.extruderTarget);
+  updateRing(bedRing, status.bedTemp, status.bedTarget);
   
-  // Masquer la barre de statut si configuré
-  if (!overlayConfig.showStatus) {
-    elements.connectionStatus.style.display = 'none';
-  }
-}
+  lastUpdate.textContent = now();
+};
 
-// Labels d'état
-function getStateLabel(state) {
-  const labels = {
-    printing: 'Impression',
-    paused: 'Pause',
-    idle: 'Inactif',
-    error: 'Erreur',
-    disconnected: 'Déconnecté',
+const setDisconnected = () => {
+  setConnected(false);
+  const config = stateConfig.disconnected;
+  stateIcon.innerHTML = config.icon;
+  stateText.textContent = config.text;
+  stateBadge.setAttribute('data-state', config.attr);
+  filename.textContent = 'Connexion impossible';
+  progressValue.textContent = '0%';
+  progressFill.style.width = '0%';
+  extruderTemp.textContent = '0';
+  extruderTarget.textContent = '0';
+  bedTemp.textContent = '0';
+  bedTarget.textContent = '0';
+  updateRing(nozzleRing, 0, 0);
+  updateRing(bedRing, 0, 0);
+};
+
+// ===== Update Stats =====
+const updateStats = () => {
+  const stats = history.getStats();
+  statTotal.textContent = stats.total;
+  statSuccess.textContent = `${stats.success}%`;
+  statCompleted.textContent = stats.completed;
+  statTime.textContent = formatDuration(stats.time);
+};
+
+// ===== Render History =====
+const renderHistory = () => {
+  if (history.items.length === 0) {
+    historyList.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-text">Aucun historique</div>
+      </div>
+    `;
+    return;
+  }
+
+  const icons = {
+    completed: '✓',
+    failed: '✕',
+    cancelled: '◼'
   };
-  return labels[state] || state;
-}
 
-// Fonction pour récupérer le status
-async function fetchStatus() {
+  historyList.innerHTML = history.items.map(item => `
+    <div class="history-item">
+      <div class="history-icon">${icons[item.state] || '•'}</div>
+      <div class="history-content">
+        <div class="history-filename">${item.filename}</div>
+        <div class="history-meta">
+          <span class="history-state ${item.state}">${item.state}</span>
+          <span>${formatDuration(item.duration)}</span>
+          <span>${item.timestamp}</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+};
+
+// ===== Stats Modal =====
+const openStats = () => {
+  updateStats();
+  statsModal.classList.remove('hidden');
+};
+
+const closeStats = () => {
+  statsModal.classList.add('hidden');
+};
+
+statsBtn.addEventListener('click', openStats);
+statsClose.addEventListener('click', closeStats);
+statsBackdrop.addEventListener('click', closeStats);
+
+viewHistoryBtn.addEventListener('click', () => {
+  closeStats();
+  openHistory();
+});
+
+// ===== History Modal =====
+const openHistory = () => {
+  renderHistory();
+  historyModal.classList.remove('hidden');
+};
+
+const closeHistory = () => {
+  historyModal.classList.add('hidden');
+};
+
+historyClose.addEventListener('click', closeHistory);
+historyBackdrop.addEventListener('click', closeHistory);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!statsModal.classList.contains('hidden')) {
+      closeStats();
+    }
+    if (!historyModal.classList.contains('hidden')) {
+      closeHistory();
+    }
+  }
+});
+
+// ===== API Polling =====
+const fetchStatus = async () => {
   try {
-    const response = await fetch('/api/status');
-    if (!response.ok) {
-      console.error('Erreur API:', response.status, response.statusText);
+    const res = await fetch('/api/status', {
+      method: 'GET',
+      signal: AbortSignal.timeout(3000)
+    });
+
+    if (!res.ok) {
       setDisconnected();
       return;
     }
-    const data = await response.json();
-    console.log('Status reçu:', data);
+
+    const data = await res.json();
     updateUI(data);
-  } catch (error) {
-    console.error('Erreur lors de la récupération du status:', error);
+  } catch (err) {
+    console.error('Fetch error:', err);
     setDisconnected();
   }
-}
+};
 
-// Polling toutes les secondes
-console.log('🚀 Démarrage du polling...');
-loadConfig(); // Charger la config au démarrage
+// ===== Init =====
+console.log('🎨 Klipper Overlay v3.0');
 fetchStatus();
 setInterval(fetchStatus, 1000);
-
-// Log au chargement
-console.log('✅ Klipper Overlay chargé');
-console.log('📍 URL base:', window.location.origin);
-console.log('🔧 Paramètres:', { scale, compact, position });
-console.log('👁️ Blocs visibles:', urlConfig);
+setInterval(() => { lastUpdate.textContent = now(); }, 1000);
