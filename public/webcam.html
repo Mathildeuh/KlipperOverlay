@@ -772,9 +772,15 @@
       }
     }
 
-    // Update background every 500ms
-    setInterval(updateBackgroundFromWebcam, 500);
-    webcamStream.addEventListener('load', updateBackgroundFromWebcam);
+    // Update background on image load (throttled)
+    let lastBgUpdate = 0;
+    webcamStream.addEventListener('load', () => {
+      const now = Date.now();
+      if (now - lastBgUpdate > 1000) {
+        updateBackgroundFromWebcam();
+        lastBgUpdate = now;
+      }
+    });
 
     // ===== Sidebar Toggle =====
     function toggleSidebar(show) {
@@ -871,7 +877,7 @@
         const delta = distance / lastDistance;
         scale = Math.max(1, Math.min(4, scale * delta));
         lastDistance = distance;
-        updateTransform();
+        requestAnimationFrame(updateTransform);
       } else if (e.touches.length === 1 && scale > 1) {
         e.preventDefault();
         const dx = e.touches[0].clientX - lastPosX;
@@ -880,7 +886,7 @@
         posY += dy / scale;
         lastPosX = e.touches[0].clientX;
         lastPosY = e.touches[0].clientY;
-        updateTransform();
+        requestAnimationFrame(updateTransform);
       }
     }, { passive: false });
 
@@ -1084,12 +1090,13 @@
               webcamConnectedOnce = true;
             }
           } else {
+            let snapshotInterval = null;
             function updateSnapshot() {
               webcamStream.src = url + '?t=' + Date.now();
             }
             webcamStream.src = url;
-            setInterval(updateSnapshot, 300);
-            console.log('📸 Mode snapshot activé (300ms)');
+            snapshotInterval = setInterval(updateSnapshot, 500);
+            console.log('📸 Mode snapshot activé (500ms)');
             if (!webcamConnectedOnce) {
               showToast('Webcam connectée', 'Mode snapshot actif', 'info', 3000);
               webcamConnectedOnce = true;

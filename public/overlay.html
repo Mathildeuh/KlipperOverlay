@@ -28,7 +28,10 @@
         </div>
       </div>
       <div class="card-content">
-        <div class="filename" id="filename">Aucune impression</div>
+        <div class="print-info">
+          <img id="thumbnail" class="thumbnail" style="display: none;" alt="Preview">
+          <div class="filename" id="filename">Aucune impression</div>
+        </div>
       </div>
     </section>
 
@@ -184,6 +187,12 @@
         <!-- Dynamic content -->
       </div>
     </div>
+  </div>
+
+  <!-- Thumbnail Fullscreen Modal -->
+  <div class="thumbnail-modal" id="thumbnail-modal" style="display: none;">
+    <div class="thumbnail-backdrop" id="thumbnail-backdrop"></div>
+    <img id="thumbnail-fullscreen" class="thumbnail-fullscreen" alt="Preview">
   </div>
 
   <script src="/overlay.js"></script>

@@ -186,14 +186,42 @@ body {
 }
 
 /* ===== Filename ===== */
+.print-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: all 0.25s ease;
+}
+
+.thumbnail:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.2);
+  border-color: rgba(34, 211, 238, 0.3);
+}
+
 .filename {
   font-size: 15px;
   font-weight: 500;
   color: var(--text-dim);
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
   letter-spacing: 0.01em;
+  flex: 1;
 }
 
 /* ===== Progress ===== */
@@ -710,6 +738,58 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #2a2a2a;
+}
+
+/* ===== Thumbnail Fullscreen Modal ===== */
+.thumbnail-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.thumbnail-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.2s ease;
+  cursor: pointer;
+}
+
+.thumbnail-fullscreen {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.8);
+  animation: zoomIn 0.3s ease;
+  z-index: 1;
+  border: 2px solid rgba(34, 211, 238, 0.3);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomIn {
+  from { 
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.thumbnail {
+  cursor: pointer;
 }
 
 /* ===== Responsive ===== */

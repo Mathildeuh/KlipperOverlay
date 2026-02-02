@@ -80,6 +80,7 @@ const statusLabel = $('status-label');
 const stateBadge = $('state-badge');
 const stateText = $('state-text');
 const stateIcon = $('state-icon');
+const thumbnail = $('thumbnail');
 const filename = $('filename');
 const progressValue = $('progress-value');
 const progressFill = $('progress-fill');
@@ -104,6 +105,11 @@ const historyModal = $('history-modal');
 const historyBackdrop = $('history-backdrop');
 const historyClose = $('history-close');
 const historyList = $('history-list');
+
+// Thumbnail modal
+const thumbnailModal = $('thumbnail-modal');
+const thumbnailBackdrop = $('thumbnail-backdrop');
+const thumbnailFullscreen = $('thumbnail-fullscreen');
 
 // Stats elements
 const statTotal = $('stat-total');
@@ -231,6 +237,14 @@ const updateUI = (data) => {
   
   filename.textContent = file;
 
+  // Thumbnail
+  if (status.thumbnail && status.state !== 'idle') {
+    thumbnail.src = status.thumbnail;
+    thumbnail.style.display = 'block';
+  } else {
+    thumbnail.style.display = 'none';
+  }
+
   // Progress
   const prog = status.state === 'idle' ? 0 : Math.round(status.progress || 0);
   progressValue.textContent = `${prog}%`;
@@ -343,6 +357,21 @@ const closeHistory = () => {
 historyClose.addEventListener('click', closeHistory);
 historyBackdrop.addEventListener('click', closeHistory);
 
+// ===== Thumbnail Modal =====
+const openThumbnail = () => {
+  if (thumbnail.src && thumbnail.style.display !== 'none') {
+    thumbnailFullscreen.src = thumbnail.src;
+    thumbnailModal.style.display = 'flex';
+  }
+};
+
+const closeThumbnail = () => {
+  thumbnailModal.style.display = 'none';
+};
+
+thumbnail.addEventListener('click', openThumbnail);
+thumbnailBackdrop.addEventListener('click', closeThumbnail);
+
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (!statsModal.classList.contains('hidden')) {
@@ -350,6 +379,9 @@ document.addEventListener('keydown', (e) => {
     }
     if (!historyModal.classList.contains('hidden')) {
       closeHistory();
+    }
+    if (thumbnailModal.style.display === 'flex') {
+      closeThumbnail();
     }
   }
 });
