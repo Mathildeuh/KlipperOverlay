@@ -101,6 +101,29 @@ router.post('/config/reset', (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/gcode
+ * Exécute une commande GCode (sécurisé - uniquement GANTRY_LIGHT_ON)
+ */
+router.post('/gcode', async (req: Request, res: Response) => {
+  try {
+    const { command } = req.body;
+    if (!command) {
+      return res.status(400).json({ success: false, error: 'Command required' });
+    }
+    
+    // Sécurité: seule la commande GANTRY_LIGHT_ON est autorisée
+    if (command !== 'GANTRY_LIGHT_ON') {
+      return res.status(403).json({ success: false, error: 'Command not allowed' });
+    }
+    
+    const result = await moonrakerService.runGcode(command);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /health
  * Healthcheck simple
  */

@@ -386,6 +386,35 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ===== Light Button =====
+const lightBtn = $('light-btn');
+
+lightBtn.addEventListener('click', async () => {
+  try {
+    lightBtn.style.opacity = '0.5';
+    lightBtn.style.pointerEvents = 'none';
+
+    const response = await fetch('/api/gcode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command: 'GANTRY_LIGHT_ON' })
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      console.log('💡 Lumière allumée');
+    } else {
+      console.error('Erreur:', data.error);
+    }
+  } catch (error) {
+    console.error('Erreur lumière:', error);
+  } finally {
+    lightBtn.style.opacity = '1';
+    lightBtn.style.pointerEvents = 'auto';
+  }
+});
+
 // ===== API Polling =====
 const fetchStatus = async () => {
   try {

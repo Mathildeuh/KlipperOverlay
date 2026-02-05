@@ -270,6 +270,25 @@ class MoonrakerService {
   }
 
   /**
+   * Exécute une commande GCode
+   */
+  async runGcode(command: string): Promise<any> {
+    try {
+      const response = await axios.post(
+        `${config.moonraker.url}/printer/gcode/script`,
+        { script: command },
+        { timeout: 5000 }
+      );
+      return response.data.result;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Erreur GCode: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Ferme les connexions proprement
    */
   close() {
