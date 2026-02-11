@@ -88,10 +88,7 @@ class MoonrakerService {
         rawState,
       };
 
-      const prev = this.lastStatus;
       this.lastStatus = printerStatus;
-      // notify subscribers about transition
-      this.notifySubscribers(prev, printerStatus);
       return printerStatus;
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -250,19 +247,6 @@ class MoonrakerService {
       });
     } catch (error) {
       console.error('Impossible d\'initialiser WebSocket:', error);
-    }
-  }
-
-  /**
-   * Subscribe to status transitions
-   */
-  subscribe(fn: (prev: PrinterStatus | null, now: PrinterStatus) => void) {
-    this.subscribers.push(fn);
-  }
-
-  private notifySubscribers(prev: PrinterStatus | null, now: PrinterStatus) {
-    for (const s of this.subscribers) {
-      try { s(prev, now); } catch (e) { console.error('subscriber error', e); }
     }
   }
 
