@@ -1,5 +1,6 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import WebSocket from 'ws';
+import { EventEmitter } from 'events';
 import { config } from '../config';
 import { PrinterStatus, MoonrakerQueryResponse } from '../types';
 
@@ -8,6 +9,9 @@ class MoonrakerService {
   private wsReconnectTimer: NodeJS.Timeout | null = null;
   private lastStatus: PrinterStatus | null = null;
   private metadataCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private statusEmitter = new EventEmitter();
+  private pollingTimer: NodeJS.Timeout | null = null;
+  private pollingInFlight = false;
 
   constructor() {
     this.initWebSocket();
@@ -34,6 +38,7 @@ class MoonrakerService {
       );
 
       const status = response.data.result.status;
+      const rawState = status.print_stats?.state || 'unknown';
       
       // Calcul du temps restant
       let timeRemaining: number | null = null;
@@ -69,7 +74,7 @@ class MoonrakerService {
       }
 
       const printerStatus: PrinterStatus = {
-        state: this.mapPrintState(status.print_stats?.state || 'unknown'),
+        state: this.mapPrintState(rawState),
         progress: Math.round((status.virtual_sdcard?.progress || 0) * 100),
         filename: status.print_stats?.filename || null,
         extruderTemp: status.extruder?.temperature || 0,
@@ -80,6 +85,7 @@ class MoonrakerService {
         printDuration: status.print_stats?.print_duration || null,
         thumbnail,
         timestamp: Date.now(),
+        rawState,
       };
 
       this.lastStatus = printerStatus;
@@ -102,6 +108,7 @@ class MoonrakerService {
         printDuration: null,
         thumbnail: null,
         timestamp: Date.now(),
+        rawState: 'disconnected',
       };
     }
   }
@@ -109,7 +116,7 @@ class MoonrakerService {
   /**
    * Récupère les métadonnées d'un fichier gcode (avec cache 30s)
    */
-  private async getFileMetadata(filename: string): Promise<any | null> {
+  async getFileMetadata(filename: string): Promise<any | null> {
     try {
       const now = Date.now();
       
@@ -270,6 +277,32 @@ class MoonrakerService {
   }
 
   /**
+   * Démarre un polling régulier pour notifier les changements d'état
+   */
+  startPolling(intervalMs: number = config.refreshInterval) {
+    if (this.pollingTimer) return;
+    this.pollingTimer = setInterval(async () => {
+      if (this.pollingInFlight) return;
+      this.pollingInFlight = true;
+      try {
+        const previous = this.lastStatus;
+        const current = await this.getPrinterStatus();
+        this.statusEmitter.emit('status', previous, current);
+      } finally {
+        this.pollingInFlight = false;
+      }
+    }, intervalMs);
+  }
+
+  /**
+   * Abonnement aux updates de status
+   */
+  onStatusUpdate(listener: (previous: PrinterStatus | null, current: PrinterStatus) => void) {
+    this.statusEmitter.on('status', listener);
+    return () => this.statusEmitter.off('status', listener);
+  }
+
+  /**
    * Exécute une commande GCode
    */
   async runGcode(command: string): Promise<any> {
@@ -294,6 +327,9 @@ class MoonrakerService {
   close() {
     if (this.wsReconnectTimer) {
       clearTimeout(this.wsReconnectTimer);
+    }
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
     }
     if (this.wsConnection) {
       this.wsConnection.close();

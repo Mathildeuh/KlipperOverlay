@@ -1,7 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { moonrakerService } from '../services/moonraker.service';
+import costRoutes from './cost.routes';
 
 const router = Router();
+
+router.use('/cost', costRoutes);
 
 // Configuration de l'overlay (stockée en mémoire)
 interface OverlayConfig {

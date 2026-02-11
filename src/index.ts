@@ -6,8 +6,13 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { config } from './config';
 import apiRoutes from './routes/api.routes';
+import { moonrakerService } from './services/moonraker.service';
+import { printCostService } from './services/print-cost.service';
 
 const app: Express = express();
+
+printCostService.start();
+moonrakerService.startPolling(config.refreshInterval);
 
 // Cache pour snapshots (évite les pics de charge)
 let snapshotCache: { data: Buffer; timestamp: number } | null = null;
@@ -269,5 +274,7 @@ app.listen(config.server.port, () => {
 // Gestion propre de l'arrêt
 process.on('SIGINT', () => {
   console.log('\n🛑 Arrêt du serveur...');
+  printCostService.stop();
+  moonrakerService.close();
   process.exit(0);
 });

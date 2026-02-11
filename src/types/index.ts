@@ -10,6 +10,7 @@ export interface PrinterStatus {
   printDuration: number | null; // en secondes
   thumbnail: string | null; // URL du thumbnail
   timestamp: number;
+  rawState?: string;
 }
 
 export interface MoonrakerQueryResponse {
@@ -51,3 +52,5 @@ export interface MoonrakerJobResponse {
     };
   };
 }
+
+export * from './cost';

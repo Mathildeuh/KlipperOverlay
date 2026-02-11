@@ -1,0 +1,33 @@
+[
+  {
+    "id": "mock-1770844812",
+    "filename": "test_print.gcode",
+    "startedAt": 1770844812000,
+    "endedAt": 1770852012000,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1770844812000,
+      "totalKwh": 124.5,
+      "powerW": 110
+    },
+    "energyEnd": {
+      "ts": 1770852012000,
+      "totalKwh": 124.86,
+      "powerW": 0
+    },
+    "energyDeltaKwh": 0.36,
+    "filamentG": 120,
+    "costs": {
+      "electricityEur": 0.09,
+      "filamentEur": 2.4,
+      "wearEur": 0.6,
+      "totalEur": 3.09
+    },
+    "meta": {
+      "filename": "test_print.gcode",
+      "estimatedTimeSec": 7200,
+      "filamentWeightG": 120,
+      "filamentLengthMm": 32000
+    }
+  }
+]
