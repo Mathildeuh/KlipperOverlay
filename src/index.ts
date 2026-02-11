@@ -179,6 +179,11 @@ app.get('/overlay', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/overlay.html'));
 });
 
+// Route pour la page cout
+app.get('/cost', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/cost.html'));
+});
+
 // Route pour la webcam + overlay
 app.get('/webcam', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/webcam.html'));
