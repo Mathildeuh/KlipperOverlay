@@ -1,61 +1,86 @@
+import { loginDevice } from 'tp-link-tapo-connect';
 import { TapoEnergySnapshot } from '../types';
-import { config } from '../config';
 
-let Tapo: any;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  Tapo = require('tp-link-tapo-connect');
-} catch (e) {
-  // module not installed in environment; runtime will error if used
-  Tapo = null;
+interface TapoDevice {
+  getEnergyUsage: () => Promise<any>;
 }
 
-export class TapoService {
-  private client: any | null = null;
-  private device: any | null = null;
+const normalizeW = (value: number | undefined): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  return value > 10000 ? value / 1000 : value;
+};
 
-  async init(): Promise<void> {
-    if (!Tapo) {
-      console.warn('⚠️ tp-link-tapo-connect non disponible');
-      return;
-    }
+const normalizeWh = (value: number | undefined): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  return value > 10000 ? value / 1000 : value;
+};
 
+const toNumber = (value: unknown): number | undefined => {
+  if (value === undefined || value === null) return undefined;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+};
+
+class TapoService {
+  private email = '';
+  private password = '';
+  private deviceIp = '';
+  private device: TapoDevice | null = null;
+  private enabled = false;
+
+  init(email: string, password: string, deviceIp: string, enabled: boolean) {
+    this.email = email;
+    this.password = password;
+    this.deviceIp = deviceIp;
+    this.enabled = enabled;
+  }
+
+  private async ensureDevice(): Promise<TapoDevice | null> {
+    if (!this.enabled) return null;
+    if (this.device) return this.device;
     try {
-      const { Tapo } = require('tp-link-tapo-connect');
-      this.client = new Tapo.TapoClient();
-      const email = config.tapo.email;
-      const password = config.tapo.password;
-      if (!email || !password || !config.tapo.deviceIp) {
-        console.warn('⚠️ Tapo config missing');
-        return;
-      }
-
-      await this.client.login(email, password);
-      this.device = await this.client.getDevice({ ip: config.tapo.deviceIp });
-      console.log('✓ Tapo initialisé');
-    } catch (err) {
-      console.error('Erreur init Tapo:', (err as Error).message);
-      this.client = null;
-      this.device = null;
+      this.device = await loginDevice(this.email, this.password, this.deviceIp);
+      return this.device;
+    } catch (error) {
+      console.warn('⚠️ Tapo indisponible:', (error as Error).message);
+      return null;
     }
   }
 
-  async snapshot(): Promise<TapoEnergySnapshot | null> {
+  async snapshot(): Promise<TapoEnergySnapshot> {
+    const ts = Date.now();
+    const device = await this.ensureDevice();
+    if (!device) return { ts };
+
     try {
-      if (!this.device) return null;
-      const stats = await this.device.getRealtime();
-      // stats example: { power: number (W), today: Wh, month: Wh, total: kWh }
-      const snap: TapoEnergySnapshot = {
-        ts: Date.now(),
-        powerW: typeof stats.power === 'number' ? stats.power : undefined,
-        todayWh: typeof stats.today === 'number' ? stats.today : undefined,
-        monthWh: typeof stats.month === 'number' ? stats.month : undefined,
-        totalKwh: typeof stats.total === 'number' ? stats.total : undefined,
+      const energy = await device.getEnergyUsage();
+
+      const powerW = normalizeW(
+        toNumber(energy?.current_power ?? energy?.current_power_w ?? energy?.current_power_mw)
+      );
+      const todayWh = normalizeWh(
+        toNumber(energy?.today_energy ?? energy?.today_energy_wh ?? energy?.today_energy_mwh)
+      );
+      const monthWh = normalizeWh(
+        toNumber(energy?.month_energy ?? energy?.month_energy_wh ?? energy?.month_energy_mwh)
+      );
+
+      const totalKwhDirect = toNumber(energy?.total_energy_kwh);
+      const totalWh = normalizeWh(
+        toNumber(energy?.total_energy ?? energy?.total_energy_wh ?? energy?.total_energy_mwh)
+      );
+      const totalKwh = totalKwhDirect ?? (totalWh !== undefined ? totalWh / 1000 : undefined);
+
+      return {
+        ts,
+        powerW,
+        todayWh,
+        monthWh,
+        totalKwh,
       };
-      return snap;
-    } catch (err) {
-      console.error('Erreur snapshot Tapo:', (err as Error).message);
-      return null;
+    } catch (error) {
+      console.warn('⚠️ Snapshot Tapo indisponible:', (error as Error).message);
+      return { ts };
     }
   }
 }

@@ -2,11 +2,19 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-function parseFloatEnv(name: string, fallback: number) {
-  const v = process.env[name];
-  if (!v) return fallback;
-  const n = parseFloat(v);
-  return Number.isFinite(n) ? n : fallback;
+const parseNumber = (value: string | undefined, fallback: number): number => {
+  if (!value) return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const tapoEmail = process.env.TAPO_EMAIL || '';
+const tapoPassword = process.env.TAPO_PASSWORD || '';
+const tapoDeviceIp = process.env.TAPO_DEVICE_IP || '';
+const tapoEnabled = Boolean(tapoEmail && tapoPassword && tapoDeviceIp);
+
+if (!tapoEnabled) {
+  console.warn('⚠️ TAPO_* manquants. Le coût electricite sera indisponible.');
 }
 
 export const config = {
@@ -20,14 +28,15 @@ export const config = {
   },
   refreshInterval: parseInt(process.env.REFRESH_INTERVAL || '1000', 10),
   tapo: {
-    email: process.env.TAPO_EMAIL || '',
-    password: process.env.TAPO_PASSWORD || '',
-    deviceIp: process.env.TAPO_DEVICE_IP || '',
+    email: tapoEmail,
+    password: tapoPassword,
+    deviceIp: tapoDeviceIp,
+    enabled: tapoEnabled,
   },
-  pricing: {
-    electricityEurPerKwh: parseFloatEnv('ELECTRICITY_EUR_PER_KWH', 0.25),
-    machineEurPerHour: parseFloatEnv('MACHINE_EUR_PER_HOUR', 0.3),
-    filamentEurPerKg: parseFloatEnv('FILAMENT_EUR_PER_KG', 20),
+  costs: {
+    electricityEurPerKwh: parseNumber(process.env.ELECTRICITY_EUR_PER_KWH, 0.25),
+    machineEurPerHour: parseNumber(process.env.MACHINE_EUR_PER_HOUR, 0.3),
+    filamentEurPerKg: parseNumber(process.env.FILAMENT_EUR_PER_KG, 20),
   },
 };
 

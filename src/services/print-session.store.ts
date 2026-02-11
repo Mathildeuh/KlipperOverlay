@@ -1,55 +1,53 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { PrintSession } from '../types';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const FILE_PATH = path.join(DATA_DIR, 'prints.json');
+class PrintSessionStore {
+  private dataDir = path.join(process.cwd(), 'data');
+  private dataFile = path.join(this.dataDir, 'prints.json');
 
-function ensureDirectory() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  async ensureDirectory() {
+    await fs.mkdir(this.dataDir, { recursive: true });
+  }
+
+  async readAll(): Promise<PrintSession[]> {
+    await this.ensureDirectory();
+    try {
+      const content = await fs.readFile(this.dataFile, 'utf8');
+      const parsed = JSON.parse(content) as PrintSession[];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error: any) {
+      if (error?.code === 'ENOENT') return [];
+      console.warn('⚠️ Impossible de lire prints.json:', error.message);
+      return [];
+    }
+  }
+
+  async getById(id: string): Promise<PrintSession | undefined> {
+    const sessions = await this.readAll();
+    return sessions.find((session) => session.id === id);
+  }
+
+  async upsert(session: PrintSession): Promise<void> {
+    const sessions = await this.readAll();
+    const index = sessions.findIndex((item) => item.id === session.id);
+
+    if (index >= 0) {
+      sessions[index] = session;
+    } else {
+      sessions.push(session);
+    }
+
+    await this.writeAtomic(sessions);
+  }
+
+  private async writeAtomic(sessions: PrintSession[]): Promise<void> {
+    await this.ensureDirectory();
+    const tmpFile = `${this.dataFile}.tmp`;
+    const content = JSON.stringify(sessions, null, 2);
+    await fs.writeFile(tmpFile, content, 'utf8');
+    await fs.rename(tmpFile, this.dataFile);
   }
 }
 
-function readAll(): PrintSession[] {
-  try {
-    ensureDirectory();
-    if (!fs.existsSync(FILE_PATH)) return [];
-    const raw = fs.readFileSync(FILE_PATH, 'utf8');
-    if (!raw) return [];
-    return JSON.parse(raw) as PrintSession[];
-  } catch (err) {
-    console.error('Erreur lecture prints.json:', (err as Error).message);
-    return [];
-  }
-}
-
-function writeAtomic(data: PrintSession[]) {
-  ensureDirectory();
-  const tmp = `${FILE_PATH}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf8');
-  fs.renameSync(tmp, FILE_PATH);
-}
-
-function upsert(session: PrintSession) {
-  const all = readAll();
-  const idx = all.findIndex(s => s.id === session.id);
-  if (idx >= 0) {
-    all[idx] = session;
-  } else {
-    all.push(session);
-  }
-  writeAtomic(all);
-}
-
-function getById(id: string): PrintSession | null {
-  const all = readAll();
-  return all.find(s => s.id === id) || null;
-}
-
-export const printSessionStore = {
-  ensureDirectory,
-  readAll,
-  upsert,
-  getById,
-};
+export const printSessionStore = new PrintSessionStore();

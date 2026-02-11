@@ -13,14 +13,14 @@ export interface PrintMetadata {
   filamentLengthMm?: number;
 }
 
-export type PrintStatus = 'printing' | 'completed' | 'canceled' | 'failed';
+export type PrintSessionStatus = 'printing' | 'completed' | 'canceled' | 'failed';
 
 export interface PrintSession {
   id: string;
   filename: string;
   startedAt: number;
   endedAt?: number;
-  status: PrintStatus;
+  status: PrintSessionStatus;
   energyStart?: TapoEnergySnapshot;
   energyEnd?: TapoEnergySnapshot;
   energyDeltaKwh?: number;

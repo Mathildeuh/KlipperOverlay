@@ -6,12 +6,13 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { config } from './config';
 import apiRoutes from './routes/api.routes';
-import costRoutes from './routes/cost.routes';
-import { tapoService } from './services/tapo.service';
-import { printCostService } from './services/print-cost.service';
 import { moonrakerService } from './services/moonraker.service';
+import { printCostService } from './services/print-cost.service';
 
 const app: Express = express();
+
+printCostService.start();
+moonrakerService.startPolling(config.refreshInterval);
 
 // Cache pour snapshots (évite les pics de charge)
 let snapshotCache: { data: Buffer; timestamp: number } | null = null;
@@ -46,20 +47,6 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/api', apiRoutes);
-app.use('/api/cost', costRoutes);
-
-// Initialize services
-(async () => {
-  try {
-    await tapoService.init();
-    // subscribe moonraker transitions to printCostService
-    (moonrakerService as any).subscribe((prev: any, now: any) => {
-      // empty, printCostService already polls; keep for future
-    });
-  } catch (err) {
-    console.error('Error init services:', (err as Error).message);
-  }
-})();
 
 // Proxy pour les thumbnails (accessible à distance)
 app.get('/thumbnail/*', async (req: Request, res: Response) => {
@@ -192,6 +179,11 @@ app.get('/overlay', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/overlay.html'));
 });
 
+// Route pour la page cout
+app.get('/cost', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/cost.html'));
+});
+
 // Route pour la webcam + overlay
 app.get('/webcam', (req: Request, res: Response) => {
   res.sendFile(path.join(__dirname, '../public/webcam.html'));
@@ -287,5 +279,7 @@ app.listen(config.server.port, () => {
 // Gestion propre de l'arrêt
 process.on('SIGINT', () => {
   console.log('\n🛑 Arrêt du serveur...');
+  printCostService.stop();
+  moonrakerService.close();
   process.exit(0);
 });

@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { moonrakerService } from '../services/moonraker.service';
-import { printCostService } from '../services/print-cost.service';
+import costRoutes from './cost.routes';
 
 const router = Router();
+
+router.use('/cost', costRoutes);
 
 // Configuration de l'overlay (stockée en mémoire)
 interface OverlayConfig {
@@ -137,37 +139,6 @@ router.get('/health', (req: Request, res: Response) => {
     moonraker: isConnected ? 'connected' : 'disconnected',
     timestamp: Date.now(),
   });
-});
-
-// Expose simple cost endpoints for quick access
-router.get('/cost/current', async (req, res) => {
-  try {
-    const data = await printCostService.getLiveCosts();
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'internal_error' });
-  }
-});
-
-router.get('/cost/history', (req, res) => {
-  try {
-    const limit = parseInt((req.query.limit as string) || '50', 10);
-    const data = printCostService.getHistory(limit);
-    res.json({ success: true, data });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'internal_error' });
-  }
-});
-
-router.get('/cost/:id', (req, res) => {
-  try {
-    const id = req.params.id;
-    const s = printCostService.getById(id);
-    if (!s) return res.status(404).json({ success: false, error: 'not_found' });
-    res.json({ success: true, data: s });
-  } catch (err) {
-    res.status(500).json({ success: false, error: 'internal_error' });
-  }
 });
 
 export default router;
