@@ -6,6 +6,10 @@ import axios from 'axios';
 import sharp from 'sharp';
 import { config } from './config';
 import apiRoutes from './routes/api.routes';
+import costRoutes from './routes/cost.routes';
+import { tapoService } from './services/tapo.service';
+import { printCostService } from './services/print-cost.service';
+import { moonrakerService } from './services/moonraker.service';
 
 const app: Express = express();
 
@@ -42,6 +46,20 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
 app.use('/api', apiRoutes);
+app.use('/api/cost', costRoutes);
+
+// Initialize services
+(async () => {
+  try {
+    await tapoService.init();
+    // subscribe moonraker transitions to printCostService
+    (moonrakerService as any).subscribe((prev: any, now: any) => {
+      // empty, printCostService already polls; keep for future
+    });
+  } catch (err) {
+    console.error('Error init services:', (err as Error).message);
+  }
+})();
 
 // Proxy pour les thumbnails (accessible à distance)
 app.get('/thumbnail/*', async (req: Request, res: Response) => {
