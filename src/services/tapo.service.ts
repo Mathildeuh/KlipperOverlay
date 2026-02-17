@@ -1,4 +1,4 @@
-import { loginDevice } from 'tp-link-tapo-connect';
+import { cloudLogin, loginDevice, loginDeviceByIp } from 'tp-link-tapo-connect';
 import { TapoEnergySnapshot } from '../types';
 
 interface TapoDevice {
@@ -27,22 +27,55 @@ class TapoService {
   private deviceIp = '';
   private device: TapoDevice | null = null;
   private enabled = false;
+  private warnedMissing = false;
+  private warnedError = false;
 
   init(email: string, password: string, deviceIp: string, enabled: boolean) {
-    this.email = email;
-    this.password = password;
-    this.deviceIp = deviceIp;
-    this.enabled = enabled;
+    this.email = email.trim();
+    this.password = password.trim();
+    this.deviceIp = deviceIp.trim();
+    this.enabled = enabled && Boolean(this.email && this.password && this.deviceIp);
+    const hasEmail = Boolean(this.email);
+    const hasPassword = Boolean(this.password);
+    const hasIp = Boolean(this.deviceIp);
+    console.log(`🔌 Tapo config: enabled=${this.enabled} email=${hasEmail} password=${hasPassword} ip=${hasIp}`);
+    if (!this.enabled) {
+      console.warn('⚠️ Tapo desactive: identifiants ou IP manquants.');
+    }
   }
 
   private async ensureDevice(): Promise<TapoDevice | null> {
     if (!this.enabled) return null;
+    if (!this.email || !this.password || !this.deviceIp) {
+      if (!this.warnedMissing) {
+        console.warn('⚠️ Tapo desactive: identifiants ou IP manquants.');
+        this.warnedMissing = true;
+      }
+      this.enabled = false;
+      return null;
+    }
     if (this.device) return this.device;
     try {
-      this.device = await loginDevice(this.email, this.password, this.deviceIp);
+      if (this.deviceIp) {
+        this.device = await loginDeviceByIp(this.email, this.password, this.deviceIp);
+        return this.device;
+      }
+
+      const cloud = await cloudLogin(this.email, this.password);
+      const devices = await cloud.listDevicesByType('SMART.TAPOPLUG');
+
+      if (!devices || devices.length === 0) {
+        throw new Error('Aucun appareil Tapo trouve dans le cloud');
+      }
+
+      this.device = await loginDevice(this.email, this.password, devices[0]);
       return this.device;
     } catch (error) {
-      console.warn('⚠️ Tapo indisponible:', (error as Error).message);
+      if (!this.warnedError) {
+        console.warn('⚠️ Tapo indisponible:', (error as Error).message);
+        this.warnedError = true;
+      }
+      this.enabled = false;
       return null;
     }
   }
