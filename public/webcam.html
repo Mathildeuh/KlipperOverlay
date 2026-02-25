@@ -8,6 +8,7 @@
   
   <!-- PWA Meta Tags -->
   <meta name="application-name" content="Klipper Overlay">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Klipper">
@@ -22,7 +23,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Klipper Webcam Live">
   <meta property="og:description" content="Vue en direct de l'imprimante 3D Klipper">
-  <meta property="og:image" content="/webcam/snapshot">
+  <meta property="og:image" content="/favicon.ico">
 
   <!-- Twitter Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">
@@ -30,7 +31,7 @@
   <meta property="twitter:url" content="/webcam">
   <meta name="twitter:title" content="Klipper Webcam Live">
   <meta name="twitter:description" content="Vue en direct de l'imprimante 3D Klipper">
-  <meta name="twitter:image" content="/webcam/snapshot">
+  <meta name="twitter:image" content="/favicon.ico">
 
   <!-- Meta Tags Generated via https://www.opengraph.xyz -->
   
@@ -114,6 +115,13 @@
       object-fit: contain;
       touch-action: none;
       transition: transform 0.1s ease-out;
+    }
+
+    .webcam-webrtc-frame {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #000;
     }
 
     /* Zoom controls */
@@ -684,9 +692,11 @@
     const sidebarClose = document.getElementById('sidebar-close');
     const overlayIframe = document.getElementById('overlay-iframe');
     const webcamStream = document.getElementById('webcam-stream');
+    const webcamContainer = document.getElementById('webcam-container');
     const loadingSkeleton = document.getElementById('loading-skeleton');
     const offlineBanner = document.getElementById('offline-banner');
     const toastContainer = document.getElementById('toast-container');
+    const DEFAULT_WEBRTC_URL = '/go2rtc/webrtc.html?src=tapo_c202&media=video+audio';
 
     // ===== Toast Notifications =====
     function showToast(title, message, type = 'info', duration = 5000) {
@@ -1036,84 +1046,67 @@
 
     // ===== Webcam Loading =====
     let webcamConnectedOnce = false;
-    
-    function loadWebcam() {
-      const streamUrls = [
-        '/webcam/stream',
-      ];
 
-      const snapshotUrls = [
-        '/webcam/snapshot',
-      ];
+    function normalizeWebrtcUrl(rawUrl) {
+      return new URL(rawUrl, window.location.origin).toString();
+    }
 
-      const moonrakerUrl = urlParams.get('moonraker') || null;
-      if (moonrakerUrl) {
-        streamUrls.unshift(moonrakerUrl);
-      }
+    function loadWebcamWebrtc(url) {
+      const webrtcFrame = document.createElement('iframe');
+      webrtcFrame.className = 'webcam-webrtc-frame';
+      webrtcFrame.src = url;
+      webrtcFrame.allow = 'autoplay; microphone; camera; fullscreen';
+      webrtcFrame.referrerPolicy = 'no-referrer';
+      webrtcFrame.setAttribute('title', 'Webcam WebRTC');
 
-      let allUrls = [...streamUrls, ...snapshotUrls];
-      let currentIndex = 0;
+      webcamStream.style.display = 'none';
+      webcamContainer.insertBefore(webrtcFrame, loadingSkeleton);
 
-      function tryNextUrl() {
-        if (currentIndex >= allUrls.length) {
-          console.error('❌ Impossible de charger la webcam');
-          loadingIndicator.innerHTML = '<div class="loading-text" style="color: var(--color-danger);">❌ Webcam non disponible<br><small style="color: var(--color-text-secondary); font-size: 12px;">Vérifiez la connexion</small></div>';
-          return;
-        }
-
-        const url = allUrls[currentIndex];
-        const isStream = currentIndex < streamUrls.length;
-        const urlType = isStream ? '🎥 Stream' : '📸 Snapshot';
-        
-        console.log(`🔍 Essai ${urlType} (${currentIndex + 1}/${allUrls.length}): ${url}`);
-        
-        let timeout = setTimeout(() => {
-          console.log(`⏱️ Timeout sur ${url}`);
-          currentIndex++;
-          tryNextUrl();
-        }, 4000);
-
-        const testImg = new Image();
-        testImg.crossOrigin = 'anonymous';
-        
-        testImg.onload = () => {
-          clearTimeout(timeout);
-          console.log(`✅ Webcam trouvée (${urlType}) à: ${url}`);
-          loadingSkeleton.style.display = 'none';
-          
-          if (isStream) {
-            webcamStream.src = url;
-            console.log('🎥 Mode stream MJPEG activé');
-            if (!webcamConnectedOnce) {
-              showToast('Webcam connectée', 'Stream MJPEG actif', 'success', 3000);
-              webcamConnectedOnce = true;
-            }
-          } else {
-            let snapshotInterval = null;
-            function updateSnapshot() {
-              webcamStream.src = url + '?t=' + Date.now();
-            }
-            webcamStream.src = url;
-            snapshotInterval = setInterval(updateSnapshot, 500);
-            console.log('📸 Mode snapshot activé (500ms)');
-            if (!webcamConnectedOnce) {
-              showToast('Webcam connectée', 'Mode snapshot actif', 'info', 3000);
-              webcamConnectedOnce = true;
+      webrtcFrame.addEventListener('load', () => {
+        try {
+          const frameDoc = webrtcFrame.contentDocument;
+          if (frameDoc) {
+            const pageText = (frameDoc.body?.textContent || '').toLowerCase();
+            const pageTitle = (frameDoc.title || '').toLowerCase();
+            if (pageText.includes('cannot get') || pageTitle.includes('404')) {
+              console.error(`❌ Webcam WebRTC introuvable: ${url}`);
+              showToast('Webcam introuvable', 'URL WebRTC non trouvée (404)', 'error', 6000);
+              return;
             }
           }
-        };
+        } catch (err) {
+          // Accès cross-origin: on ne peut pas inspecter le contenu, on considère chargé.
+        }
 
-        testImg.onerror = () => {
-          clearTimeout(timeout);
-          console.log(`❌ ${urlType} échouée: ${url}`);
-          currentIndex++;
-          tryNextUrl();
-        };
+        loadingSkeleton.style.display = 'none';
+        console.log(`✅ Webcam WebRTC chargée: ${url}`);
+        if (!webcamConnectedOnce) {
+          showToast('Webcam connectée', 'Mode WebRTC actif', 'success', 3000);
+          webcamConnectedOnce = true;
+        }
+      });
 
-        testImg.src = url;
+      setTimeout(() => {
+        if (loadingSkeleton.style.display !== 'none') {
+          console.warn('⚠️ WebRTC non chargé (URL/certificat/proxy à vérifier)');
+          showToast('Webcam indisponible', 'Vérifie HTTPS/reverse proxy pour WebRTC', 'warning', 6000);
+        }
+      }, 4000);
+    }
+    
+    function loadWebcam() {
+      const rawWebrtcUrl = urlParams.get('webrtc') || DEFAULT_WEBRTC_URL;
+
+      const webrtcUrl = normalizeWebrtcUrl(rawWebrtcUrl);
+
+      if (window.location.protocol === 'https:' && webrtcUrl.startsWith('http://')) {
+        console.warn(`⚠️ WebRTC bloqué en HTTPS (mixed content): ${webrtcUrl}`);
+        showToast('Webcam bloquée', 'URL WebRTC en HTTP depuis une page HTTPS', 'warning', 7000);
+        return;
       }
 
-      tryNextUrl();
+      console.log(`🔍 Essai WebRTC: ${webrtcUrl}`);
+      loadWebcamWebrtc(webrtcUrl);
     }
 
     loadWebcam();

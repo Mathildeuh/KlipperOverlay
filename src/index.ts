@@ -3,20 +3,19 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
-import sharp from 'sharp';
+import http from 'http';
+import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { config } from './config';
 import apiRoutes from './routes/api.routes';
 import { moonrakerService } from './services/moonraker.service';
 import { printCostService } from './services/print-cost.service';
 
 const app: Express = express();
+const go2rtcBaseUrl = process.env.GO2RTC_URL || 'http://192.168.1.155:1984';
+const go2rtcWsBaseUrl = go2rtcBaseUrl.replace(/^http/, 'ws');
 
 printCostService.start();
 moonrakerService.startPolling(config.refreshInterval);
-
-// Cache pour snapshots (évite les pics de charge)
-let snapshotCache: { data: Buffer; timestamp: number } | null = null;
-const SNAPSHOT_CACHE_TTL = 100; // ms
 
 // Middleware
 if (config.server.corsEnabled) {
@@ -76,101 +75,36 @@ app.get('/thumbnail/*', async (req: Request, res: Response) => {
   }
 });
 
-// Proxy pour la webcam (streaming MJPEG)
-app.get('/webcam/*', async (req: Request, res: Response) => {
+// Proxy HTTP vers go2rtc (WebRTC page et endpoints associés)
+app.get('/go2rtc/*', async (req: Request, res: Response) => {
   try {
-    const path = req.params[0];
-    // La webcam est sur le serveur web principal, pas sur Moonraker
-    // On extrait l'host/port de l'URL Moonraker et on utilise le même host mais port 80
-    const moonrakerUrl = new URL(config.moonraker.url);
-    const webcamHost = moonrakerUrl.hostname;
-    
-    // Construire l'URL vers la vraie webcam
-    const webcamPath = path ? `/${path}` : '';
-    const webcamUrl = `http://${webcamHost}/webcam${webcamPath}`;
-    
-    console.log(`🎥 Proxy webcam vers: ${webcamUrl}`);
-
-    const response = await axios.get(webcamUrl, {
-      responseType: 'stream',
-      timeout: 10000,
-      headers: {
-        'Connection': 'keep-alive',
-      },
-    });
-
-    // Transférer les headers de streaming
-    res.setHeader('Content-Type', response.headers['content-type'] || 'multipart/x-mixed-replace');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    
-    if (response.headers['content-length']) {
-      res.setHeader('Content-Length', response.headers['content-length']);
-    }
-
-    // Streamer directement
-    response.data.pipe(res);
-
-    // Gestion des erreurs du stream
-    response.data.on('error', (err: any) => {
-      console.error('Erreur stream webcam:', err.message);
-      if (!res.headersSent) {
-        res.status(502).json({ error: 'Webcam stream error' });
-      }
-    });
-
-  } catch (error) {
-    console.error('Erreur lors du proxy webcam:', error);
-    if (!res.headersSent) {
-      res.status(404).json({ error: 'Webcam not found' });
-    }
-  }
-});
-
-// Endpoint snapshot pour webcam (extrait un JPEG du stream MJPEG)
-// Utile pour l'accès distant via img tags (plus fiable que le stream MJPEG brut)
-app.get('/webcam/snapshot', async (req: Request, res: Response) => {
-  try {
-    // Vérifier le cache
-    const now = Date.now();
-    if (snapshotCache && (now - snapshotCache.timestamp) < SNAPSHOT_CACHE_TTL) {
-      res.setHeader('Content-Type', 'image/jpeg');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.send(snapshotCache.data);
+    const targetPath = req.originalUrl.replace(/^\/go2rtc/, '') || '/';
+    if (targetPath.startsWith('/api/ws')) {
+      res.setHeader('Connection', 'Upgrade');
+      res.setHeader('Upgrade', 'websocket');
+      res.status(426).send('Upgrade Required: WebSocket endpoint');
       return;
     }
 
-    const moonrakerUrl = new URL(config.moonraker.url);
-    const webcamHost = moonrakerUrl.hostname;
-    const snapshotUrl = `http://${webcamHost}/webcam/stream?action=snapshot`;
+    const targetUrl = `${go2rtcBaseUrl}${targetPath}`;
 
-    const response = await axios.get(snapshotUrl, {
+    const response = await axios.get(targetUrl, {
       responseType: 'arraybuffer',
-      timeout: 5000,
+      timeout: 10000,
+      headers: {
+        Accept: req.headers.accept || '*/*',
+      },
     });
 
-    // Juste retourner le JPEG brut (rotation en CSS côté client)
-    // Aucun traitement Sharp pour libérer CPU
-    const jpegBuffer = Buffer.from(response.data);
-
-    // Mettre en cache
-    snapshotCache = { data: jpegBuffer, timestamp: now };
-
-    res.setHeader('Content-Type', 'image/jpeg');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.send(jpegBuffer);
-
-  } catch (error) {
-    console.error('Erreur snapshot webcam:', error);
-    if (!res.headersSent) {
-      res.status(404).json({ error: 'Webcam snapshot not available' });
+    if (response.headers['content-type']) {
+      res.setHeader('Content-Type', response.headers['content-type']);
     }
+
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.status(response.status).send(Buffer.from(response.data));
+  } catch (error) {
+    console.error('Erreur proxy go2rtc HTTP:', error);
+    res.status(502).send('go2rtc unavailable');
   }
 });
 
@@ -260,8 +194,74 @@ app.get('/', (req: Request, res: Response) => {
   `);
 });
 
+const server = http.createServer(app);
+const wsServer = new WebSocketServer({ noServer: true });
+
+const toTextMessage = (data: RawData): string => {
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  if (Buffer.isBuffer(data)) {
+    return data.toString('utf8');
+  }
+
+  if (data instanceof ArrayBuffer) {
+    return Buffer.from(data).toString('utf8');
+  }
+
+  if (Array.isArray(data)) {
+    return Buffer.concat(data).toString('utf8');
+  }
+
+  return Buffer.from(data).toString('utf8');
+};
+
+server.on('upgrade', (req, socket, head) => {
+  const requestUrl = req.url || '';
+  if (!requestUrl.startsWith('/go2rtc/api/ws')) {
+    socket.destroy();
+    return;
+  }
+
+  wsServer.handleUpgrade(req, socket, head, (clientSocket) => {
+    const queryStart = requestUrl.indexOf('?');
+    const queryString = queryStart >= 0 ? requestUrl.slice(queryStart) : '';
+    const targetWsUrl = `${go2rtcWsBaseUrl}/api/ws${queryString}`;
+    const targetSocket = new WebSocket(targetWsUrl);
+
+    targetSocket.on('open', () => {
+      clientSocket.on('message', (data) => {
+        if (targetSocket.readyState === WebSocket.OPEN) {
+          targetSocket.send(toTextMessage(data), { binary: false });
+        }
+      });
+    });
+
+    targetSocket.on('message', (data) => {
+      if (clientSocket.readyState === WebSocket.OPEN) {
+        clientSocket.send(toTextMessage(data), { binary: false });
+      }
+    });
+
+    const closeBoth = () => {
+      if (clientSocket.readyState === WebSocket.OPEN || clientSocket.readyState === WebSocket.CONNECTING) {
+        clientSocket.close();
+      }
+      if (targetSocket.readyState === WebSocket.OPEN || targetSocket.readyState === WebSocket.CONNECTING) {
+        targetSocket.close();
+      }
+    };
+
+    clientSocket.on('close', closeBoth);
+    targetSocket.on('close', closeBoth);
+    clientSocket.on('error', closeBoth);
+    targetSocket.on('error', closeBoth);
+  });
+});
+
 // Démarrage du serveur
-app.listen(config.server.port, () => {
+server.listen(config.server.port, () => {
   console.log(`
 ╔═══════════════════════════════════════════╗
 ║   🖨️  Klipper Overlay Server              ║
@@ -281,5 +281,7 @@ process.on('SIGINT', () => {
   console.log('\n🛑 Arrêt du serveur...');
   printCostService.stop();
   moonrakerService.close();
+  wsServer.close();
+  server.close();
   process.exit(0);
 });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'klipper-overlay-v1';
+const CACHE_NAME = 'klipper-overlay-v2';
 const urlsToCache = [
   '/webcam',
   '/overlay',
@@ -33,20 +33,31 @@ self.addEventListener('activate', (event) => {
 
 // Fetch - stratégie network-first avec cache fallback
 self.addEventListener('fetch', (event) => {
-  // Skip pour les requêtes API et WebSocket
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('/webcam/stream') ||
-      event.request.url.includes('/webcam/snapshot')) {
+  const requestUrl = new URL(event.request.url);
+
+  // Skip pour les requêtes non HTTP(S), non-GET, API et origines externes
+  if (
+    !['http:', 'https:'].includes(requestUrl.protocol) ||
+    event.request.method !== 'GET' ||
+    requestUrl.origin !== self.location.origin ||
+    requestUrl.pathname.startsWith('/api/')
+  ) {
     return;
   }
 
   event.respondWith(
     fetch(event.request)
       .then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
         // Clone la réponse avant de la mettre en cache
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
+          cache.put(event.request, responseToCache).catch(() => {
+            // Ignore cache errors (ex: schémas non supportés)
+          });
         });
         return response;
       })
