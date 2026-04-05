@@ -1,0 +1,20 @@
+[Unit]
+Description=Klipper Overlay Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/KlipperOverlay
+EnvironmentFile=-/root/KlipperOverlay/.env
+ExecStartPre=/usr/bin/npm run build
+ExecStart=/usr/bin/node /root/KlipperOverlay/dist/index.js
+Restart=always
+RestartSec=5
+User=root
+Group=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

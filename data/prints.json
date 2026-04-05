@@ -1284,5 +1284,115 @@
       "filamentWeightG": 135.12,
       "filamentLengthMm": 45304.7
     }
+  },
+  {
+    "id": "b33df113-c56d-4738-a16d-2a839c876469",
+    "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+    "startedAt": 1775393461478,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1775393461477
+    },
+    "filamentG": 148.51,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+      "estimatedTimeSec": 21564,
+      "filamentWeightG": 148.51,
+      "filamentLengthMm": 48617.17
+    }
+  },
+  {
+    "id": "2890c1d8-3436-4597-8946-4259e3a5d23f",
+    "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+    "startedAt": 1775393623470,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1775393623450
+    },
+    "filamentG": 148.51,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+      "estimatedTimeSec": 21564,
+      "filamentWeightG": 148.51,
+      "filamentLengthMm": 48617.17
+    }
+  },
+  {
+    "id": "82ee7156-d3d7-4936-a38c-047bb4a6b9da",
+    "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+    "startedAt": 1775393836589,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1775393836571
+    },
+    "filamentG": 148.51,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+      "estimatedTimeSec": 21564,
+      "filamentWeightG": 148.51,
+      "filamentLengthMm": 48617.17
+    }
+  },
+  {
+    "id": "0e2b16a6-5e09-4681-a488-ec64189391db",
+    "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+    "startedAt": 1775393960452,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1775393960435
+    },
+    "filamentG": 148.51,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+      "estimatedTimeSec": 21564,
+      "filamentWeightG": 148.51,
+      "filamentLengthMm": 48617.17
+    }
+  },
+  {
+    "id": "87222afd-40e1-4c5f-b946-ef787953dccb",
+    "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+    "startedAt": 1775394496503,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1775394496488
+    },
+    "filamentG": 148.51,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "Gridfinity bin 3x7x5_PETG_5h59m.gcode",
+      "estimatedTimeSec": 21564,
+      "filamentWeightG": 148.51,
+      "filamentLengthMm": 48617.17
+    }
   }
 ]

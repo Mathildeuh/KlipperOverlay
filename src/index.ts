@@ -1,9 +1,11 @@
-import express, { Express, Request, Response } from 'express';
+import express, { Express, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import axios from 'axios';
 import http from 'http';
+import type { IncomingMessage } from 'http';
+import type { Socket } from 'net';
 import { RawData, WebSocket, WebSocketServer } from 'ws';
 import { config } from './config';
 import apiRoutes from './routes/api.routes';
@@ -13,6 +15,20 @@ import { printCostService } from './services/print-cost.service';
 const app: Express = express();
 const go2rtcBaseUrl = process.env.GO2RTC_URL || 'http://192.168.1.155:1984';
 const go2rtcWsBaseUrl = go2rtcBaseUrl.replace(/^http/, 'ws');
+
+app.set('trust proxy', true);
+
+app.use((req: Request, res: Response, next: NextFunction) => {
+  const forwardedProto = req.headers['x-forwarded-proto'];
+  const isHttps = req.secure || forwardedProto === 'https';
+  const isLocalRequest = ['localhost', '127.0.0.1', '::1'].includes(req.hostname);
+
+  if (!isHttps && !isLocalRequest && req.method === 'GET' && !req.path.startsWith('/.well-known/acme-challenge/')) {
+    return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+  }
+
+  next();
+});
 
 printCostService.start();
 moonrakerService.startPolling(config.refreshInterval);
@@ -130,6 +146,8 @@ app.get('/mobile', (req: Request, res: Response) => {
 
 // Route racine
 app.get('/', (req: Request, res: Response) => {
+  const publicOrigin = `${req.protocol}://${req.get('host')}`;
+
   res.send(`
     <html>
       <head>
@@ -178,7 +196,7 @@ app.get('/', (req: Request, res: Response) => {
         <h2>Configuration OBS:</h2>
         <ol>
           <li>Ajouter une source "Navigateur"</li>
-          <li>URL: <code>http://localhost:${config.server.port}/overlay</code></li>
+          <li>URL: <code>${publicOrigin}/overlay</code></li>
           <li>Largeur: 400 / Hauteur: 300 (ajustable)</li>
           <li>Cocher "Arrière-plan transparent"</li>
         </ol>
@@ -217,28 +235,28 @@ const toTextMessage = (data: RawData): string => {
   return Buffer.from(data).toString('utf8');
 };
 
-server.on('upgrade', (req, socket, head) => {
+server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {
   const requestUrl = req.url || '';
   if (!requestUrl.startsWith('/go2rtc/api/ws')) {
     socket.destroy();
     return;
   }
 
-  wsServer.handleUpgrade(req, socket, head, (clientSocket) => {
+  wsServer.handleUpgrade(req, socket, head, (clientSocket: WebSocket) => {
     const queryStart = requestUrl.indexOf('?');
     const queryString = queryStart >= 0 ? requestUrl.slice(queryStart) : '';
     const targetWsUrl = `${go2rtcWsBaseUrl}/api/ws${queryString}`;
     const targetSocket = new WebSocket(targetWsUrl);
 
     targetSocket.on('open', () => {
-      clientSocket.on('message', (data) => {
+      clientSocket.on('message', (data: RawData) => {
         if (targetSocket.readyState === WebSocket.OPEN) {
           targetSocket.send(toTextMessage(data), { binary: false });
         }
       });
     });
 
-    targetSocket.on('message', (data) => {
+    targetSocket.on('message', (data: RawData) => {
       if (clientSocket.readyState === WebSocket.OPEN) {
         clientSocket.send(toTextMessage(data), { binary: false });
       }
@@ -262,6 +280,8 @@ server.on('upgrade', (req, socket, head) => {
 
 // Démarrage du serveur
 server.listen(config.server.port, () => {
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL || 'https://printer.mathilde.online';
+
   console.log(`
 ╔═══════════════════════════════════════════╗
 ║   🖨️  Klipper Overlay Server              ║
@@ -270,8 +290,8 @@ server.listen(config.server.port, () => {
 ║  Moonraker:   ${config.moonraker.url.padEnd(24, ' ')}║
 ║  CORS:        ${config.server.corsEnabled ? 'Enabled' : 'Disabled'}                   ║
 ╠═══════════════════════════════════════════╣
-║  Overlay:     http://localhost:${config.server.port}/overlay  ║
-║  API:         http://localhost:${config.server.port}/api      ║
+║  Overlay:     ${publicBaseUrl}/overlay  ║
+║  API:         ${publicBaseUrl}/api      ║
 ╚═══════════════════════════════════════════╝
   `);
 });
