@@ -33,7 +33,8 @@ Serveur local Node.js pour afficher les informations d'une imprimante 3D Klipper
 ### 1. Cloner ou télécharger le projet
 
 ```bash
-cd /chemin/vers/klipper-overlay
+git clone https://github.com/Mathildeuh/KlipperOverlay.git
+cd KlipperOverlay
 ```
 
 ### 2. Installer les dépendances
