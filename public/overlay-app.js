@@ -64,16 +64,13 @@ const maxReconnectAttempts = 5;
 
 const connectWebSocket = () => {
   try {
-    // Essayer d'abord WSS/WS sur le domaine actuel
     let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     let wsUrl = `${protocol}//${window.location.host}/ws`;
-    
-    console.log(`📡 Tentative 1 - Connexion WebSocket: ${wsUrl}`);
+
     ws = new WebSocket(wsUrl);
     
     const timeout = setTimeout(() => {
       if (ws && ws.readyState === WebSocket.CONNECTING) {
-        console.warn(`⏱️ Timeout connexion ${wsUrl}, essai fallback...`);
         ws.close();
         connectWebSocketFallback();
       }
@@ -81,28 +78,20 @@ const connectWebSocket = () => {
     
     ws.onopen = () => {
       clearTimeout(timeout);
-      console.log('✅ WebSocket connecté avec succès!');
       reconnectAttempts = 0;
     };
     
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📨 Message reçu:', data.type);
         updateOverlay(data);
-      } catch (e) {
-        console.error('Parse error:', e);
+      } catch {
       }
     };
     
     ws.onerror = (error) => {
       clearTimeout(timeout);
-      console.error('❌ WebSocket error:', error);
-      console.error('URL tentée:', wsUrl);
-      console.error('Protocol:', protocol);
-      // Si WSS échoue, aller directement au fallback
       if (protocol === 'wss:') {
-        console.warn('⚠️ WSS échoué, passage immédiat au fallback...');
         setTimeout(() => {
           if (ws && ws.readyState !== WebSocket.OPEN) {
             ws.close();
@@ -114,93 +103,74 @@ const connectWebSocket = () => {
     
     ws.onclose = () => {
       clearTimeout(timeout);
-      // Si WSS/WebSocket local échoue, passer au fallback
       if (protocol === 'wss:') {
-        console.warn('⚠️ WebSocket WSS fermé, passage au fallback...');
         connectWebSocketFallback();
       } else {
-        console.log(`⚠️ WebSocket fermé (tentative ${reconnectAttempts + 1}/${maxReconnectAttempts})`);
         if (reconnectAttempts < maxReconnectAttempts) {
           reconnectAttempts++;
-          console.log(`🔄 Reconnexion dans 2 secondes...`);
           setTimeout(connectWebSocket, 2000);
         }
       }
     };
   } catch (e) {
-    console.error('Connection error:', e);
     connectWebSocketFallback();
   }
 };
 
 // Fallback: essayer WS (non-sécurisé) sur l'IP locale
 const connectWebSocketFallback = () => {
-  // Si on est en HTTPS, on ne peut PAS utiliser WS non-sécurisé (navigateur le refuse)
-  // → Aller directement au polling API
   if (window.location.protocol === 'https:') {
-    console.warn('⚠️ HTTPS détecté - WS non-sécurisé bloqué par navigateur');
-    console.log('📊 Passage direct au polling API');
     startPollingFallback();
     return;
   }
-  
-  // Si on est en HTTP local, essayer les IP locales en WS
+
   const possibleIPs = [
-    '192.168.1.155:8080',  // IP locale du serveur
+    '192.168.1.155:8080',
     '192.168.1.1:8080',
     'localhost:8080',
   ];
-  
+
   tryNextIP(0, possibleIPs);
 };
 
 const tryNextIP = (index, ips) => {
   if (index >= ips.length) {
-    console.warn('❌ Impossible de se connecter au WebSocket, passage au polling');
     startPollingFallback();
     return;
   }
-  
+
   const ip = ips[index];
   const wsUrl = `ws://${ip}/ws`;
-  
-  console.log(`📡 Essai fallback ${index + 1}/${ips.length}: ${wsUrl}`);
-  
+
   ws = new WebSocket(wsUrl);
-  
+
   const timeout = setTimeout(() => {
     if (ws.readyState === WebSocket.CONNECTING) {
-      console.warn(`⏱️ Timeout ${wsUrl}`);
       ws.close();
       tryNextIP(index + 1, ips);
     }
   }, 2000);
-  
+
   ws.onopen = () => {
     clearTimeout(timeout);
-    console.log(`✅ WebSocket connecté via fallback: ${wsUrl}`);
     reconnectAttempts = 0;
   };
-  
+
   ws.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data);
-      console.log('📨 Message reçu (fallback):', data.type);
       updateOverlay(data);
-    } catch (e) {
-      console.error('Parse error:', e);
+    } catch {
     }
   };
-  
+
   ws.onerror = () => {
     clearTimeout(timeout);
-    console.warn(`❌ Erreur fallback ${ip}`);
     tryNextIP(index + 1, ips);
   };
-  
+
   ws.onclose = () => {
     clearTimeout(timeout);
-    console.log(`⚠️ Fallback fermé`);
   };
 };
 
@@ -208,10 +178,8 @@ const tryNextIP = (index, ips) => {
 let pollingInterval = null;
 
 const startPollingFallback = () => {
-  console.log('📊 Passage au polling API');
-  
   if (pollingInterval) clearInterval(pollingInterval);
-  
+
   pollingInterval = setInterval(async () => {
     try {
       const response = await fetch('/api/status');
@@ -220,7 +188,6 @@ const startPollingFallback = () => {
       const apiResponse = await response.json();
       
       if (!apiResponse.success || !apiResponse.data) {
-        console.error('❌ Réponse API invalide:', apiResponse);
         return;
       }
       
@@ -241,24 +208,19 @@ const startPollingFallback = () => {
       };
       
       updateOverlay(data);
-    } catch (err) {
-      console.error('❌ Polling error:', err);
+    } catch {
     }
   }, 1000); // Polling every 1 second
 };
 
 // ===== Update Overlay ===== 
 const updateOverlay = (data) => {
-  console.log('📥 Data reçue:', data);
-  
   if (!data || !data.data) {
-    console.warn('⚠️ Pas de data.data', data);
     return;
   }
-  
+
   const status = data.data;
-  console.log('📊 Status:', status);
-  
+
   // Update print stats (structure from moonraker service)
   printStats.duration = status.printDuration || status.print_duration || 0;
   printStats.remaining = status.timeRemaining || status.time_remaining || 0;
@@ -272,27 +234,17 @@ const updateOverlay = (data) => {
   } else {
     printStats.progress = 0;
   }
-  
-  console.log('⏱️ Duration:', printStats.duration, 'Remaining:', printStats.remaining);
-  console.log('📈 Progress:', printStats.progress, '% | Total:', printStats.totalDuration);
-  
+
   // Update temperatures
   printStats.temps.extruder = status.extruderTemp || status.extruder_temp || status.extruder?.temperature || 0;
   printStats.temps.bed = status.bedTemp || status.bed_temp || status.heater_bed?.temperature || 0;
-  
-  console.log('🌡️ Extruder:', printStats.temps.extruder, 'Bed:', printStats.temps.bed);
-  
+
   // Update photo if available
   if (status.thumbnail) {
-    console.log('📸 Thumbnail data found:', status.thumbnail);
-    
     if (thumbnailSmall) {
       thumbnailSmall.src = status.thumbnail;
-      console.log('📸 Set thumbnail-small src');
-    } else {
-      console.warn('❌ thumbnailSmall element not found!');
     }
-    
+
     if (thumbnailInline) {
       thumbnailInline.style.display = 'block';
       // Attach click handler to open the full-size thumbnail modal
@@ -304,11 +256,8 @@ const updateOverlay = (data) => {
           thumbnailContainer.style.display = 'flex';
         }
       };
-      console.log('📸 Set thumbnail-inline display: block and click handler attached');
-    } else {
-      console.warn('❌ thumbnailInline element not found!');
     }
-    
+
     if (thumbnail) {
       thumbnail.src = status.thumbnail;
     }
@@ -321,13 +270,11 @@ const updateOverlay = (data) => {
         thumbnailContainer.style.display = 'none';
       };
     }
-  } else {
-    console.warn('⚠️ No thumbnail in status data');
   }
-  
+
   // Update UI
   updateUI();
-  
+
   // Update graph every 5 seconds (random sample)
   if (Math.random() < 0.2) {
     updateGraph();
@@ -434,16 +381,8 @@ thumbnailContainer?.addEventListener('click', () => {
 
 // ===== Initialize =====
 window.addEventListener('load', () => {
-  console.log('🚀 Overlay initialized');
-  console.log('📍 Version: 1.0');
-  
-  // Verify thumbnail elements exist
-  console.log('🎯 DOM Check:');
-  console.log('  - thumbnailSmall:', thumbnailSmall ? '✅' : '❌');
-  console.log('  - thumbnailInline:', thumbnailInline ? '✅' : '❌');
-  
   connectWebSocket();
-  
+
   // Force initial update
   updateUI();
   

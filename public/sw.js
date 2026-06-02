@@ -1,4 +1,4 @@
-const CACHE_NAME = 'klipper-overlay-v2';
+const CACHE_NAME = 'klipper-overlay-v3';
 const urlsToCache = [
   '/webcam',
   '/overlay',

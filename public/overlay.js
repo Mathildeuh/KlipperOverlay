@@ -18,7 +18,7 @@ class PrintHistory {
     try {
       localStorage.setItem(this.key, JSON.stringify(this.items));
     } catch (e) {
-      console.error('Save error:', e);
+      console.log('Save error:', e);
     }
   }
 
@@ -179,15 +179,12 @@ const updateRing = (ring, current, target) => {
 
 // ===== Update UI =====
 const updateUI = (data) => {
-  console.log('📥 Données reçues:', data);
-  
   if (!data?.success) {
     setDisconnected();
     return;
   }
 
   const status = data.data;
-  console.log('📊 État du status:', status.state, status);
 
   if (status.state === 'disconnected') {
     setDisconnected();
@@ -198,13 +195,10 @@ const updateUI = (data) => {
 
   // State change detection
   if (lastState !== status.state) {
-    console.log(`State: ${lastState} → ${status.state}`);
-
     if ((lastState === 'printing' || lastState === 'paused') && status.state === 'idle') {
       const dur = status.printDuration ? status.printDuration * 1000 : 0;
       const file = lastFilename || status.filename || 'Unknown';
       history.add(file, dur, 'completed');
-      console.log('✓ Print saved:', file);
       
       filename.textContent = 'Aucune impression';
       progressValue.textContent = '0%';
@@ -403,12 +397,9 @@ lightBtn.addEventListener('click', async () => {
     const data = await response.json();
     
     if (data.success) {
-      console.log('💡 Lumière allumée');
     } else {
-      console.error('Erreur:', data.error);
     }
   } catch (error) {
-    console.error('Erreur lumière:', error);
   } finally {
     lightBtn.style.opacity = '1';
     lightBtn.style.pointerEvents = 'auto';
@@ -431,13 +422,11 @@ const fetchStatus = async () => {
     const data = await res.json();
     updateUI(data);
   } catch (err) {
-    console.error('Fetch error:', err);
     setDisconnected();
   }
 };
 
 // ===== Init =====
-console.log('🎨 Klipper Overlay v3.0');
 fetchStatus();
 setInterval(fetchStatus, 1000);
 setInterval(() => { lastUpdate.textContent = now(); }, 1000);

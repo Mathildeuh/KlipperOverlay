@@ -23,9 +23,7 @@ class PrintCostService {
     );
 
     this.unsubscribeStatus = moonrakerService.onStatusUpdate((previous, current) => {
-      this.handleStatusUpdate(previous, current).catch((error) => {
-        console.error('Erreur print-cost:', error);
-      });
+      this.handleStatusUpdate(previous, current).catch(() => {});
     });
   }
 
@@ -106,7 +104,6 @@ class PrintCostService {
 
     this.activeSession = session;
     await printSessionStore.upsert(session);
-    console.log(`💰 Session impression demarree: ${session.id} (${session.filename})`);
   }
 
   private async endSession(status: PrinterStatus) {
@@ -128,7 +125,6 @@ class PrintCostService {
     };
 
     await printSessionStore.upsert(session);
-    console.log(`💰 Session impression terminee: ${session.id} (${session.status})`);
 
     this.activeSession = null;
   }

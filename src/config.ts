@@ -14,7 +14,6 @@ const tapoDeviceIp = process.env.TAPO_DEVICE_IP || '';
 const tapoEnabled = Boolean(tapoEmail && tapoPassword && tapoDeviceIp);
 
 if (!tapoEnabled) {
-  console.warn('⚠️ TAPO_* manquants. Le coût electricite sera indisponible.');
 }
 
 export const config = {
@@ -42,7 +41,6 @@ export const config = {
 
 // Basic validation
 if (!config.moonraker.url) {
-  console.warn('⚠️ MOONRAKER_URL non configurée');
 }
 
 export type Config = typeof config;

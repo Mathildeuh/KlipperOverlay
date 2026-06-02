@@ -1394,5 +1394,699 @@
       "filamentWeightG": 148.51,
       "filamentLengthMm": 48617.17
     }
+  },
+  {
+    "id": "cb4fc684-bc8b-475d-ae8a-52462b6ac3b6",
+    "filename": "Gear arch cutout central charging _PETG_7h29m.gcode",
+    "startedAt": 1775651489075,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1775651489052
+    },
+    "filamentG": 102.81,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "Gear arch cutout central charging _PETG_7h29m.gcode",
+      "estimatedTimeSec": 26937,
+      "filamentWeightG": 102.81,
+      "filamentLengthMm": 33657.05
+    }
+  },
+  {
+    "id": "6ab13bef-a1ed-414d-9ea3-0d92dd0c18fd",
+    "filename": "Gear arch cutout central charging _PETG_7h29m.gcode",
+    "startedAt": 1775669592205,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1775669592173
+    },
+    "filamentG": 102.81,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 2.06,
+      "wearEur": 0.62,
+      "totalEur": 2.68
+    },
+    "meta": {
+      "filename": "Gear arch cutout central charging _PETG_7h29m.gcode",
+      "estimatedTimeSec": 26937,
+      "filamentWeightG": 102.81,
+      "filamentLengthMm": 33657.05
+    },
+    "endedAt": 1775677006726,
+    "energyEnd": {
+      "ts": 1775677006726
+    }
+  },
+  {
+    "id": "df40533b-d19b-4ff0-bc5c-8e757b807cb4",
+    "filename": "Segmentation_Segment_1_PETG_3h16m.gcode",
+    "startedAt": 1775716147569,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1775716147568
+    },
+    "filamentG": 35.99,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.72,
+      "wearEur": 0.68,
+      "totalEur": 1.4
+    },
+    "meta": {
+      "filename": "Segmentation_Segment_1_PETG_3h16m.gcode",
+      "estimatedTimeSec": 11788,
+      "filamentWeightG": 35.99,
+      "filamentLengthMm": 11782.47
+    },
+    "endedAt": 1775724300635,
+    "energyEnd": {
+      "ts": 1775724300635
+    }
+  },
+  {
+    "id": "7f547a32-4feb-4ba9-bf1d-5fd354c164d1",
+    "filename": "AA and AAA Battery holder_PETG_3h16m.gcode",
+    "startedAt": 1775922871590,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1775922871565
+    },
+    "filamentG": 99.18,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.98,
+      "wearEur": 1.03,
+      "totalEur": 3.01
+    },
+    "meta": {
+      "filename": "AA and AAA Battery holder_PETG_3h16m.gcode",
+      "estimatedTimeSec": 11732,
+      "filamentWeightG": 99.18,
+      "filamentLengthMm": 32467.26
+    },
+    "endedAt": 1775935176078,
+    "energyEnd": {
+      "ts": 1775935176078
+    }
+  },
+  {
+    "id": "1ce86179-8658-4e44-9ae1-525ff1f9efdf",
+    "filename": "IKEA Alex Handle_PLA_2h40m.gcode",
+    "startedAt": 1776011797847,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776011797847
+    },
+    "filamentG": 52.03,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.04,
+      "wearEur": 0.83,
+      "totalEur": 1.87
+    },
+    "meta": {
+      "filename": "IKEA Alex Handle_PLA_2h40m.gcode",
+      "estimatedTimeSec": 9614,
+      "filamentWeightG": 52.03,
+      "filamentLengthMm": 17443.51
+    },
+    "endedAt": 1776021707878,
+    "energyEnd": {
+      "ts": 1776021707878
+    }
+  },
+  {
+    "id": "9137315e-0a41-4c13-b29f-012342360cae",
+    "filename": "obj_4_组合体_PLA_6h51m.gcode",
+    "startedAt": 1776022041579,
+    "status": "printing",
+    "energyStart": {
+      "ts": 1776022041579
+    },
+    "filamentG": 92.49,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0,
+      "wearEur": 0,
+      "totalEur": 0
+    },
+    "meta": {
+      "filename": "obj_4_组合体_PLA_6h51m.gcode",
+      "estimatedTimeSec": 24689,
+      "filamentWeightG": 92.49,
+      "filamentLengthMm": 31010.81
+    }
+  },
+  {
+    "id": "f11e4ab6-aff2-4d59-b56a-c6d03fe1bebf",
+    "filename": "obj_1_____15_(1)_PLA_2h4m.gcode",
+    "startedAt": 1776075924844,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776075924828
+    },
+    "filamentG": 44.92,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.9,
+      "wearEur": 0.63,
+      "totalEur": 1.53
+    },
+    "meta": {
+      "filename": "obj_1_____15_(1)_PLA_2h4m.gcode",
+      "estimatedTimeSec": 7431,
+      "filamentWeightG": 44.92,
+      "filamentLengthMm": 15059.94
+    },
+    "endedAt": 1776083438497,
+    "energyEnd": {
+      "ts": 1776083438497
+    }
+  },
+  {
+    "id": "814fe9db-4818-444c-9712-bc7b9627c796",
+    "filename": "Base_PLA_3h46m.gcode",
+    "startedAt": 1776084538925,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776084538925
+    },
+    "filamentG": 70.89,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.42,
+      "wearEur": 0.72,
+      "totalEur": 2.14
+    },
+    "meta": {
+      "filename": "Base_PLA_3h46m.gcode",
+      "estimatedTimeSec": 13541,
+      "filamentWeightG": 70.89,
+      "filamentLengthMm": 23767.27
+    },
+    "endedAt": 1776093155055,
+    "energyEnd": {
+      "ts": 1776093155055
+    }
+  },
+  {
+    "id": "b4e7f684-d4b1-41ab-9fba-f7941653b6e0",
+    "filename": "Base_PLA_2h48m.gcode",
+    "startedAt": 1776093648311,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776093648311
+    },
+    "filamentG": 54.9,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.1,
+      "wearEur": 0.18,
+      "totalEur": 1.28
+    },
+    "meta": {
+      "filename": "Base_PLA_2h48m.gcode",
+      "estimatedTimeSec": 10093,
+      "filamentWeightG": 54.9,
+      "filamentLengthMm": 18408.04
+    },
+    "endedAt": 1776095829982,
+    "energyEnd": {
+      "ts": 1776095829982
+    }
+  },
+  {
+    "id": "51458ff5-00fb-4bb9-8d3a-177924294db4",
+    "filename": "Base_PLA_2h48m.gcode",
+    "startedAt": 1776095902033,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776095902033
+    },
+    "filamentG": 54.9,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.1,
+      "wearEur": 0,
+      "totalEur": 1.1
+    },
+    "meta": {
+      "filename": "Base_PLA_2h48m.gcode",
+      "estimatedTimeSec": 10093,
+      "filamentWeightG": 54.9,
+      "filamentLengthMm": 18408.04
+    },
+    "endedAt": 1776095921139,
+    "energyEnd": {
+      "ts": 1776095921139
+    }
+  },
+  {
+    "id": "8d0182e5-306c-4b59-9d2a-330462dda4d5",
+    "filename": "Base_PLA_2h20m.gcode",
+    "startedAt": 1776097054521,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776097054520
+    },
+    "filamentG": 45.2,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.9,
+      "wearEur": 0.71,
+      "totalEur": 1.61
+    },
+    "meta": {
+      "filename": "Base_PLA_2h20m.gcode",
+      "estimatedTimeSec": 8387,
+      "filamentWeightG": 45.2,
+      "filamentLengthMm": 15153.7
+    },
+    "endedAt": 1776105625464,
+    "energyEnd": {
+      "ts": 1776105625464
+    }
+  },
+  {
+    "id": "3faf63b7-76f5-450a-a777-2ee527e00a19",
+    "filename": "Gatillo Dyson v20_PLA_26m10s.gcode",
+    "startedAt": 1776156416924,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776156416924
+    },
+    "filamentG": 5.49,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.11,
+      "wearEur": 0.07,
+      "totalEur": 0.18
+    },
+    "meta": {
+      "filename": "Gatillo Dyson v20_PLA_26m10s.gcode",
+      "estimatedTimeSec": 1570,
+      "filamentWeightG": 5.49,
+      "filamentLengthMm": 1842.32
+    },
+    "endedAt": 1776157271248,
+    "energyEnd": {
+      "ts": 1776157271248
+    }
+  },
+  {
+    "id": "db8ceec3-d235-414e-a226-77ba79f4caf5",
+    "filename": "Gatillo Dyson v20_PETG_23m39s.gcode",
+    "startedAt": 1776157308127,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1776157308127
+    },
+    "filamentG": 5.74,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.11,
+      "wearEur": 0.14,
+      "totalEur": 0.25
+    },
+    "meta": {
+      "filename": "Gatillo Dyson v20_PETG_23m39s.gcode",
+      "estimatedTimeSec": 1419,
+      "filamentWeightG": 5.74,
+      "filamentLengthMm": 1879.92
+    },
+    "endedAt": 1776159002866,
+    "energyEnd": {
+      "ts": 1776159002866
+    }
+  },
+  {
+    "id": "a55d6a87-e2e3-48b0-86d1-06c706432a6f",
+    "filename": "Corps1_PLA_7h20m.gcode",
+    "startedAt": 1778403397002,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778403396983
+    },
+    "filamentG": 136.61,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 2.73,
+      "wearEur": 2.17,
+      "totalEur": 4.9
+    },
+    "meta": {
+      "filename": "Corps1_PLA_7h20m.gcode",
+      "estimatedTimeSec": 26384,
+      "filamentWeightG": 136.61,
+      "filamentLengthMm": 45803.01
+    },
+    "endedAt": 1778429478951,
+    "energyEnd": {
+      "ts": 1778429478951
+    }
+  },
+  {
+    "id": "6b7c2ecc-b764-44de-a616-279273cf03bd",
+    "filename": "boutonV4_PLA_X4Plus.gcode",
+    "startedAt": 1778693813458,
+    "status": "failed",
+    "energyStart": {
+      "ts": 1778693813457
+    },
+    "filamentG": 1.71,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.03,
+      "wearEur": 0,
+      "totalEur": 0.03
+    },
+    "meta": {
+      "filename": "boutonV4_PLA_X4Plus.gcode",
+      "estimatedTimeSec": 536,
+      "filamentWeightG": 1.71,
+      "filamentLengthMm": 572.18
+    },
+    "endedAt": 1778693856580,
+    "energyEnd": {
+      "ts": 1778693856580
+    }
+  },
+  {
+    "id": "bad7c0bb-023a-4b44-9fae-9cddcccd8128",
+    "filename": "boutonV4_PLA_10m24s.gcode",
+    "startedAt": 1778696089424,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778696089424
+    },
+    "filamentG": 1.45,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.03,
+      "wearEur": 0.09,
+      "totalEur": 0.12
+    },
+    "meta": {
+      "filename": "boutonV4_PLA_10m24s.gcode",
+      "estimatedTimeSec": 624,
+      "filamentWeightG": 1.45,
+      "filamentLengthMm": 485.6
+    },
+    "endedAt": 1778697172053,
+    "energyEnd": {
+      "ts": 1778697172053
+    }
+  },
+  {
+    "id": "5f41e381-389d-4148-87a6-dab9f44f665c",
+    "filename": "poigneeRV3_PLA_1h47m.gcode",
+    "startedAt": 1778698586647,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778698586647
+    },
+    "filamentG": 21.23,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.42,
+      "wearEur": 0.56,
+      "totalEur": 0.98
+    },
+    "meta": {
+      "filename": "poigneeRV3_PLA_1h47m.gcode",
+      "estimatedTimeSec": 6392,
+      "filamentWeightG": 21.23,
+      "filamentLengthMm": 7118.8
+    },
+    "endedAt": 1778705288339,
+    "energyEnd": {
+      "ts": 1778705288339
+    }
+  },
+  {
+    "id": "a2c7b2b3-fda5-4dd2-b27b-997a926226a3",
+    "filename": "poigneeRV3_PLA_1h47m.gcode",
+    "startedAt": 1778707097190,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778707097190
+    },
+    "filamentG": 21.23,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.42,
+      "wearEur": 0,
+      "totalEur": 0.42
+    },
+    "meta": {
+      "filename": "poigneeRV3_PLA_1h47m.gcode",
+      "estimatedTimeSec": 6392,
+      "filamentWeightG": 21.23,
+      "filamentLengthMm": 7118.8
+    },
+    "endedAt": 1778707110303,
+    "energyEnd": {
+      "ts": 1778707110303
+    }
+  },
+  {
+    "id": "208401af-ffcc-4eae-8cca-590dec756546",
+    "filename": "BaffleB_PLA_2h44m.gcode",
+    "startedAt": 1778707517795,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778707517795
+    },
+    "filamentG": 30.73,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.61,
+      "wearEur": 0.84,
+      "totalEur": 1.45
+    },
+    "meta": {
+      "filename": "BaffleB_PLA_2h44m.gcode",
+      "estimatedTimeSec": 9855,
+      "filamentWeightG": 30.73,
+      "filamentLengthMm": 10302.9
+    },
+    "endedAt": 1778717640666,
+    "energyEnd": {
+      "ts": 1778717640666
+    }
+  },
+  {
+    "id": "a6ca6bab-b73c-4ab1-bb1b-daa5e3932407",
+    "filename": "pavillonV4_PLA_1h20m.gcode",
+    "startedAt": 1778744237902,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778744237902
+    },
+    "filamentG": 15.2,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.3,
+      "wearEur": 0.43,
+      "totalEur": 0.73
+    },
+    "meta": {
+      "filename": "pavillonV4_PLA_1h20m.gcode",
+      "estimatedTimeSec": 4817,
+      "filamentWeightG": 15.2,
+      "filamentLengthMm": 5097.04
+    },
+    "endedAt": 1778749389081,
+    "energyEnd": {
+      "ts": 1778749389081
+    }
+  },
+  {
+    "id": "d87cdf29-6955-42ad-a91a-47a28ee499e8",
+    "filename": "pavillonV4_PLA_2h35m.gcode",
+    "startedAt": 1778753293784,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1778753293784
+    },
+    "filamentG": 23.41,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.47,
+      "wearEur": 0.78,
+      "totalEur": 1.25
+    },
+    "meta": {
+      "filename": "pavillonV4_PLA_2h35m.gcode",
+      "estimatedTimeSec": 9318,
+      "filamentWeightG": 23.41,
+      "filamentLengthMm": 7847.75
+    },
+    "endedAt": 1778762694583,
+    "energyEnd": {
+      "ts": 1778762694583
+    }
+  },
+  {
+    "id": "f8b18db7-5d6d-4df5-95ea-e521f605c0ae",
+    "filename": "COVER FLOWER CUP LG_PLA_27m20s.gcode",
+    "startedAt": 1779013282007,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1779013282006
+    },
+    "filamentG": 11.64,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.23,
+      "wearEur": 0.18,
+      "totalEur": 0.41
+    },
+    "meta": {
+      "filename": "COVER FLOWER CUP LG_PLA_27m20s.gcode",
+      "estimatedTimeSec": 1640,
+      "filamentWeightG": 11.64,
+      "filamentLengthMm": 3902.87
+    },
+    "endedAt": 1779015394410,
+    "energyEnd": {
+      "ts": 1779015394410
+    }
+  },
+  {
+    "id": "4e08556c-b50b-4500-a9b6-f038c9b47f47",
+    "filename": "FLOWER CUP LG_PLA_4h18m.gcode",
+    "startedAt": 1779016449375,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1779016449375
+    },
+    "filamentG": 64.36,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.29,
+      "wearEur": 1.32,
+      "totalEur": 2.61
+    },
+    "meta": {
+      "filename": "FLOWER CUP LG_PLA_4h18m.gcode",
+      "estimatedTimeSec": 15505,
+      "filamentWeightG": 64.36,
+      "filamentLengthMm": 21579.68
+    },
+    "endedAt": 1779032273600,
+    "energyEnd": {
+      "ts": 1779032273600
+    }
+  },
+  {
+    "id": "373fe817-fc33-4b9e-aea3-76f118691701",
+    "filename": "WHITE-FACE_PLA_8m48s.gcode",
+    "startedAt": 1779034263560,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1779034263560
+    },
+    "filamentG": 2.1,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.04,
+      "wearEur": 0.07,
+      "totalEur": 0.11
+    },
+    "meta": {
+      "filename": "WHITE-FACE_PLA_8m48s.gcode",
+      "estimatedTimeSec": 528,
+      "filamentWeightG": 2.1,
+      "filamentLengthMm": 703.25
+    },
+    "endedAt": 1779035148715,
+    "energyEnd": {
+      "ts": 1779035148715
+    }
+  },
+  {
+    "id": "c80f4042-1391-45f2-a367-228f682a8d05",
+    "filename": "YELLOW-RING_PLA_16m25s.gcode",
+    "startedAt": 1779035970425,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1779035970425
+    },
+    "filamentG": 4.41,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.09,
+      "wearEur": 0.11,
+      "totalEur": 0.2
+    },
+    "meta": {
+      "filename": "YELLOW-RING_PLA_16m25s.gcode",
+      "estimatedTimeSec": 985,
+      "filamentWeightG": 4.41,
+      "filamentLengthMm": 1479.12
+    },
+    "endedAt": 1779037256943,
+    "energyEnd": {
+      "ts": 1779037256943
+    }
+  },
+  {
+    "id": "91d22b25-101e-4676-919c-f7395489b90a",
+    "filename": "RED-RING_PLA_17m37s.gcode",
+    "startedAt": 1779038424225,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1779038424225
+    },
+    "filamentG": 5.04,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.1,
+      "wearEur": 0.12,
+      "totalEur": 0.22
+    },
+    "meta": {
+      "filename": "RED-RING_PLA_17m37s.gcode",
+      "estimatedTimeSec": 1057,
+      "filamentWeightG": 5.04,
+      "filamentLengthMm": 1689.46
+    },
+    "endedAt": 1779039812588,
+    "energyEnd": {
+      "ts": 1779039812588
+    }
+  },
+  {
+    "id": "a8c0bf2e-2200-46a0-9838-7179d48b5be5",
+    "filename": "xbox_controller_stand_PLA_2h58m.gcode",
+    "startedAt": 1779979990896,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1779979990847
+    },
+    "filamentG": 38.4,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 0.77,
+      "wearEur": 0.91,
+      "totalEur": 1.68
+    },
+    "meta": {
+      "filename": "xbox_controller_stand_PLA_2h58m.gcode",
+      "estimatedTimeSec": 10676,
+      "filamentWeightG": 38.4,
+      "filamentLengthMm": 12875.65
+    },
+    "endedAt": 1779990942919,
+    "energyEnd": {
+      "ts": 1779990942919
+    }
   }
 ]

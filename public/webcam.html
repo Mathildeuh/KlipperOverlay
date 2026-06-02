@@ -640,7 +640,7 @@
     const loadingSkeleton = document.getElementById('loading-skeleton');
     const offlineBanner = document.getElementById('offline-banner');
     const toastContainer = document.getElementById('toast-container');
-    const DEFAULT_WEBRTC_URL = '/go2rtc/webrtc.html?src=tapo_c202&media=video+audio';
+    const DEFAULT_WEBRTC_URL = '/go2rtc/stream.html?src=tapo_c222';
 
     // ===== Toast Notifications =====
     function showToast(title, message, type = 'info', duration = 5000) {
@@ -775,9 +775,7 @@
     
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
-          console.log('Erreur fullscreen:', err);
-        });
+        document.documentElement.requestFullscreen().catch(() => {});
       } else {
         document.exitFullscreen();
       }
@@ -887,7 +885,6 @@
           offlineBanner.style.display = 'none';
           
           if (!window.lastPrinterOnline && window.lastPrinterOnline !== undefined) {
-            console.log('✅ Imprimante reconnectée');
             showToast('Imprimante en ligne', 'Klipper est de retour', 'success');
             sendNotification('🖨️ Imprimante en ligne!', {
               body: 'Klipper est de retour en ligne',
@@ -900,7 +897,6 @@
           // Check print completion
           const currentState = data.data.state;
           if (window.lastPrinterState === 'printing' && currentState === 'idle') {
-            console.log('✅ Impression terminée');
             const filename = data.data.filename || 'Fichier inconnu';
             showToast('Impression terminée!', filename, 'success');
             sendNotification('✅ Impression terminée!', {
@@ -916,7 +912,6 @@
           return true;
         }
       } catch (error) {
-        console.error('Erreur vérification printer status:', error);
         offlineBanner.style.display = 'flex';
         window.lastPrinterOnline = false;
         return false;
@@ -926,7 +921,6 @@
     // ===== Notifications =====
     function sendNotification(title, options = {}) {
       if (!('Notification' in window)) {
-        console.log('Les notifications ne sont pas supportées');
         return;
       }
 
@@ -972,7 +966,6 @@
             const pageText = (frameDoc.body?.textContent || '').toLowerCase();
             const pageTitle = (frameDoc.title || '').toLowerCase();
             if (pageText.includes('cannot get') || pageTitle.includes('404')) {
-              console.error(`❌ Webcam WebRTC introuvable: ${url}`);
               showToast('Webcam introuvable', 'URL WebRTC non trouvée (404)', 'error', 6000);
               return;
             }
@@ -982,7 +975,6 @@
         }
 
         loadingSkeleton.style.display = 'none';
-        console.log(`✅ Webcam WebRTC chargée: ${url}`);
         if (!webcamConnectedOnce) {
           showToast('Webcam connectée', 'Mode WebRTC actif', 'success', 3000);
           webcamConnectedOnce = true;
@@ -991,7 +983,6 @@
 
       setTimeout(() => {
         if (loadingSkeleton.style.display !== 'none') {
-          console.warn('⚠️ WebRTC non chargé (URL/certificat/proxy à vérifier)');
           showToast('Webcam indisponible', 'Vérifie HTTPS/reverse proxy pour WebRTC', 'warning', 6000);
         }
       }, 4000);
@@ -1003,12 +994,10 @@
       const webrtcUrl = normalizeWebrtcUrl(rawWebrtcUrl);
 
       if (window.location.protocol === 'https:' && webrtcUrl.startsWith('http://')) {
-        console.warn(`⚠️ WebRTC bloqué en HTTPS (mixed content): ${webrtcUrl}`);
         showToast('Webcam bloquée', 'URL WebRTC en HTTP depuis une page HTTPS', 'warning', 7000);
         return;
       }
 
-      console.log(`🔍 Essai WebRTC: ${webrtcUrl}`);
       loadWebcamWebrtc(webrtcUrl);
     }
 
@@ -1018,12 +1007,9 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-          .then(reg => console.log('✅ Service Worker enregistré', reg.scope))
-          .catch(err => console.log('❌ Service Worker erreur:', err));
+          .catch(() => {});
       });
     }
-
-    console.log('🎥 Klipper Webcam chargé - Design moderne avec sidebar');
   </script>
 </body>
 </html>

@@ -11,19 +11,16 @@ export class WebSocketManager {
     this.wss = new WebSocketServer({ server, path: '/ws' });
     
     this.wss.on('connection', (ws: WebSocket) => {
-      console.log('✅ Client WebSocket connecté');
       this.clients.add(ws);
 
       // Envoyer les données immédiatement à la connexion
       this.sendStatusToClient(ws);
 
       ws.on('close', () => {
-        console.log('❌ Client WebSocket déconnecté');
         this.clients.delete(ws);
       });
 
       ws.on('error', (error) => {
-        console.error('Erreur WebSocket:', error);
         this.clients.delete(ws);
       });
     });
@@ -53,7 +50,6 @@ export class WebSocketManager {
         data: status
       }));
     } catch (error) {
-      console.error('Erreur envoi status:', error);
     }
   }
 

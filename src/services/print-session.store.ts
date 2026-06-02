@@ -18,7 +18,6 @@ class PrintSessionStore {
       return Array.isArray(parsed) ? parsed : [];
     } catch (error: any) {
       if (error?.code === 'ENOENT') return [];
-      console.warn('⚠️ Impossible de lire prints.json:', error.message);
       return [];
     }
   }

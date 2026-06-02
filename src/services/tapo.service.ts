@@ -35,22 +35,13 @@ class TapoService {
     this.password = password.trim();
     this.deviceIp = deviceIp.trim();
     this.enabled = enabled && Boolean(this.email && this.password && this.deviceIp);
-    const hasEmail = Boolean(this.email);
-    const hasPassword = Boolean(this.password);
-    const hasIp = Boolean(this.deviceIp);
-    console.log(`🔌 Tapo config: enabled=${this.enabled} email=${hasEmail} password=${hasPassword} ip=${hasIp}`);
-    if (!this.enabled) {
-      console.warn('⚠️ Tapo desactive: identifiants ou IP manquants.');
-    }
+    this.warnedMissing = !this.enabled;
   }
 
   private async ensureDevice(): Promise<TapoDevice | null> {
     if (!this.enabled) return null;
     if (!this.email || !this.password || !this.deviceIp) {
-      if (!this.warnedMissing) {
-        console.warn('⚠️ Tapo desactive: identifiants ou IP manquants.');
-        this.warnedMissing = true;
-      }
+      this.warnedMissing = true;
       this.enabled = false;
       return null;
     }
@@ -71,10 +62,7 @@ class TapoService {
       this.device = await loginDevice(this.email, this.password, devices[0]);
       return this.device;
     } catch (error) {
-      if (!this.warnedError) {
-        console.warn('⚠️ Tapo indisponible:', (error as Error).message);
-        this.warnedError = true;
-      }
+      this.warnedError = true;
       this.enabled = false;
       return null;
     }
@@ -112,7 +100,6 @@ class TapoService {
         totalKwh,
       };
     } catch (error) {
-      console.warn('⚠️ Snapshot Tapo indisponible:', (error as Error).message);
       return { ts };
     }
   }

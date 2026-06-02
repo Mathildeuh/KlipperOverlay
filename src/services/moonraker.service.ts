@@ -91,10 +91,6 @@ class MoonrakerService {
       this.lastStatus = printerStatus;
       return printerStatus;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Erreur Moonraker:', error.message);
-      }
-      
       // Retourne un état "disconnected"
       return {
         state: 'disconnected',
@@ -181,10 +177,7 @@ class MoonrakerService {
         return `/thumbnail/${encodedParts.join('/')}`;
       }
     } catch (error) {
-      // Thumbnail non disponible, ce n'est pas une erreur
-      if (axios.isAxiosError(error)) {
-        console.log(`⚠️ Pas de thumbnail pour: ${filename}`);
-      }
+      // Thumbnail non disponible
     }
     
     return null;
@@ -196,13 +189,10 @@ class MoonrakerService {
   private initWebSocket() {
     try {
       const wsUrl = `${config.moonraker.wsUrl}/websocket`;
-      console.log(`Connexion WebSocket à: ${wsUrl}`);
       
       this.wsConnection = new WebSocket(wsUrl);
 
       this.wsConnection.on('open', () => {
-        console.log('✓ WebSocket connecté à Moonraker');
-        
         // S'abonner aux updates de l'imprimante
         const subscribeMessage = {
           jsonrpc: '2.0',
@@ -227,17 +217,14 @@ class MoonrakerService {
           const message = JSON.parse(data.toString());
           // Les updates arrivent ici, on peut les traiter si besoin
           // Pour l'instant on se contente du polling HTTP
-        } catch (err) {
-          console.error('Erreur parsing WebSocket message:', err);
+        } catch {
         }
       });
 
       this.wsConnection.on('error', (error) => {
-        console.error('Erreur WebSocket:', error.message);
       });
 
       this.wsConnection.on('close', () => {
-        console.log('WebSocket déconnecté, reconnexion dans 5s...');
         this.wsConnection = null;
         
         // Auto-reconnect
@@ -246,7 +233,6 @@ class MoonrakerService {
         }, 5000);
       });
     } catch (error) {
-      console.error('Impossible d\'initialiser WebSocket:', error);
     }
   }
 
@@ -255,17 +241,13 @@ class MoonrakerService {
    */
   private mapPrintState(state: string): PrinterStatus['state'] {
     const stateLower = state.toLowerCase();
-    
-    console.log(`📊 État Klipper reçu: "${state}" (${stateLower})`);
-    
+
     if (stateLower === 'printing') return 'printing';
     if (stateLower === 'paused') return 'paused';
     if (stateLower === 'complete' || stateLower === 'standby' || stateLower === 'ready') return 'idle';
     if (stateLower === 'error' || stateLower === 'shutdown') return 'error';
     if (stateLower === 'cancelled') return 'idle';
-    
-    // Par défaut, si on ne reconnaît pas l'état, on retourne idle
-    console.log(`⚠️ État inconnu: "${state}", défaut à idle`);
+
     return 'idle';
   }
 

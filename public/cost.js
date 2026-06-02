@@ -191,7 +191,6 @@ const fetchCurrent = async () => {
     const data = await res.json();
     updateCurrent(data);
   } catch (err) {
-    console.error('Fetch current error:', err);
     setConnected(false);
     updateStateBadge('disconnected');
   }
@@ -204,7 +203,6 @@ const fetchHistory = async () => {
     const data = await res.json();
     renderHistory(data?.data || []);
   } catch (err) {
-    console.error('Fetch history error:', err);
   }
 };
 

@@ -85,18 +85,15 @@ async function loadConfig() {
     if (response.ok) {
       const data = await response.json();
       overlayConfig = { ...overlayConfig, ...data.data };
-      console.log('✅ Configuration chargée:', overlayConfig);
       
       // Appliquer les paramètres URL (priorité sur l'API)
       Object.keys(urlConfig).forEach(key => {
         overlayConfig[key] = urlConfig[key];
       });
-      console.log('📍 Configuration avec paramètres URL appliquée:', overlayConfig);
       
       applyConfig();
     }
   } catch (error) {
-    console.log('⚠️ Impossible de charger la configuration, utilisation des valeurs par défaut');
     // Appliquer juste les paramètres URL
     Object.keys(urlConfig).forEach(key => {
       overlayConfig[key] = urlConfig[key];
@@ -133,8 +130,6 @@ function updateUI(data) {
   
   // ===== Détection du changement d'état pour enregistrer l'historique =====
   if (lastState !== status.state) {
-    console.log(`État changé: ${lastState} → ${status.state}`);
-    
     // Si on passe de printing/paused à idle, enregistrer l'impression
     if ((lastState === 'printing' || lastState === 'paused') && status.state === 'idle') {
       const duration = status.printDuration ? status.printDuration * 1000 : 0;
@@ -142,7 +137,6 @@ function updateUI(data) {
       
       if (typeof historyManager !== 'undefined') {
         historyManager.addPrint(filename, duration, 'completed');
-        console.log('✅ Impression enregistrée dans l\'historique:', filename);
       }
       
       // Clear les infos d'impression
@@ -263,27 +257,18 @@ async function fetchStatus() {
   try {
     const response = await fetch('/api/status');
     if (!response.ok) {
-      console.error('Erreur API:', response.status, response.statusText);
       setDisconnected();
       return;
     }
     const data = await response.json();
-    console.log('Status reçu:', data);
     updateUI(data);
   } catch (error) {
-    console.error('Erreur lors de la récupération du status:', error);
     setDisconnected();
   }
 }
 
 // Polling toutes les secondes
-console.log('🚀 Démarrage du polling...');
 loadConfig(); // Charger la config au démarrage
 fetchStatus();
 setInterval(fetchStatus, 1000);
 
-// Log au chargement
-console.log('✅ Klipper Overlay chargé');
-console.log('📍 URL base:', window.location.origin);
-console.log('🔧 Paramètres:', { scale, compact, position });
-console.log('👁️ Blocs visibles:', urlConfig);
