@@ -63,6 +63,98 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Routes
 app.use('/api', apiRoutes);
 
+const proxyGo2RtcHtml = async (req: Request, res: Response) => {
+  try {
+    const targetUrl = `${go2rtcBaseUrl}${req.originalUrl.replace(/^\/go2rtc/, '')}`;
+    const response = await axios.get(targetUrl, {
+      responseType: 'text',
+      timeout: 10000,
+      headers: {
+        Accept: req.headers.accept || 'text/html,*/*',
+      },
+    });
+
+    const rewrittenHtml = String(response.data).replace(
+      /https:\/\/alexxit\.github\.io\/go2rtc\/manifest\.json/g,
+      '/go2rtc/manifest.json'
+    ).replace(
+      './video-stream.js',
+      '/go2rtc/video-stream.js?v=2'
+    );
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(rewrittenHtml);
+  } catch (error) {
+    console.error('Erreur proxy go2rtc HTML:', error);
+    res.status(502).send('go2rtc unavailable');
+  }
+};
+
+app.get('/go2rtc/stream.html', proxyGo2RtcHtml);
+
+app.get('/go2rtc/manifest.json', async (req: Request, res: Response) => {
+  try {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.sendFile(path.join(__dirname, '../public/manifest.json'));
+  } catch (error) {
+    console.error('Erreur proxy go2rtc manifest:', error);
+    res.status(502).json({ error: 'go2rtc manifest unavailable' });
+  }
+});
+
+app.get('/go2rtc/video-rtc.js', async (req: Request, res: Response) => {
+  try {
+    const targetUrl = `${go2rtcBaseUrl}/video-rtc.js`;
+    const response = await axios.get(targetUrl, {
+      responseType: 'text',
+      timeout: 10000,
+      headers: {
+        Accept: 'text/javascript,*/*',
+      },
+    });
+
+    const patchedScript = String(response.data)
+      .replaceAll('this.ondata = null;', 'this.ondata = () => {};')
+      .replace(
+        "this.ws.addEventListener('message', ev => {\n              if (typeof ev.data === 'string') {\n                  const msg = JSON.parse(ev.data);\n                  for (const mode in this.onmessage) {\n                      this.onmessage[mode](msg);\n                  }\n              } else {\n                  this.ondata(ev.data);\n              }\n          });",
+        "this.ws.addEventListener('message', ev => {\n              if (typeof ev.data === 'string') {\n                  try {\n                      const msg = JSON.parse(ev.data);\n                      for (const mode in this.onmessage) {\n                          this.onmessage[mode](msg);\n                      }\n                  } catch {\n                      if (typeof this.ondata === 'function') {\n                          this.ondata(ev.data);\n                      }\n                  }\n              } else if (typeof this.ondata === 'function') {\n                  this.ondata(ev.data);\n              }\n          });"
+      );
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'text/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(patchedScript);
+  } catch (error) {
+    console.error('Erreur proxy go2rtc video-rtc:', error);
+    res.status(502).send('go2rtc unavailable');
+  }
+});
+
+app.get('/go2rtc/video-stream.js', async (req: Request, res: Response) => {
+  try {
+    const targetUrl = `${go2rtcBaseUrl}/video-stream.js`;
+    const response = await axios.get(targetUrl, {
+      responseType: 'text',
+      timeout: 10000,
+      headers: {
+        Accept: 'text/javascript,*/*',
+      },
+    });
+
+    const patchedScript = String(response.data).replace(
+      './video-rtc.js',
+      '/go2rtc/video-rtc.js?v=2'
+    );
+
+    res.setHeader('Content-Type', response.headers['content-type'] || 'text/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(patchedScript);
+  } catch (error) {
+    console.error('Erreur proxy go2rtc video-stream:', error);
+    res.status(502).send('go2rtc unavailable');
+  }
+});
+
 // Proxy pour les thumbnails (accessible à distance)
 app.get('/thumbnail/*', async (req: Request, res: Response) => {
   try {
@@ -249,18 +341,18 @@ server.on('upgrade', (req: IncomingMessage, socket: Socket, head: Buffer) => {
     const targetSocket = new WebSocket(targetWsUrl);
 
     targetSocket.on('open', () => {
-      clientSocket.on('message', (data: RawData) => {
-        if (targetSocket.readyState === WebSocket.OPEN) {
-          targetSocket.send(toTextMessage(data), { binary: false });
-        }
-      });
+        clientSocket.on('message', (data: RawData, isBinary: boolean) => {
+          if (targetSocket.readyState === WebSocket.OPEN) {
+            targetSocket.send(data, { binary: isBinary });
+          }
+        });
     });
 
-    targetSocket.on('message', (data: RawData) => {
-      if (clientSocket.readyState === WebSocket.OPEN) {
-        clientSocket.send(toTextMessage(data), { binary: false });
-      }
-    });
+      targetSocket.on('message', (data: RawData, isBinary: boolean) => {
+        if (clientSocket.readyState === WebSocket.OPEN) {
+          clientSocket.send(data, { binary: isBinary });
+        }
+      });
 
     const closeBoth = () => {
       if (clientSocket.readyState === WebSocket.OPEN || clientSocket.readyState === WebSocket.CONNECTING) {

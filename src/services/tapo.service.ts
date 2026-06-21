@@ -34,13 +34,24 @@ class TapoService {
     this.email = email.trim();
     this.password = password.trim();
     this.deviceIp = deviceIp.trim();
-    this.enabled = enabled && Boolean(this.email && this.password && this.deviceIp);
+    this.enabled = enabled && Boolean(this.email && this.password);
     this.warnedMissing = !this.enabled;
+  }
+
+  private async loginViaCloud(): Promise<TapoDevice> {
+    const cloud = await cloudLogin(this.email, this.password);
+    const devices = await cloud.listDevicesByType('SMART.TAPOPLUG');
+
+    if (!devices || devices.length === 0) {
+      throw new Error('Aucun appareil Tapo trouvé dans le cloud');
+    }
+
+    return loginDevice(this.email, this.password, devices[0]);
   }
 
   private async ensureDevice(): Promise<TapoDevice | null> {
     if (!this.enabled) return null;
-    if (!this.email || !this.password || !this.deviceIp) {
+    if (!this.email || !this.password) {
       this.warnedMissing = true;
       this.enabled = false;
       return null;
@@ -48,18 +59,16 @@ class TapoService {
     if (this.device) return this.device;
     try {
       if (this.deviceIp) {
-        this.device = await loginDeviceByIp(this.email, this.password, this.deviceIp);
-        return this.device;
+        try {
+          this.device = await loginDeviceByIp(this.email, this.password, this.deviceIp);
+          return this.device;
+        } catch {
+          this.device = await this.loginViaCloud();
+          return this.device;
+        }
       }
 
-      const cloud = await cloudLogin(this.email, this.password);
-      const devices = await cloud.listDevicesByType('SMART.TAPOPLUG');
-
-      if (!devices || devices.length === 0) {
-        throw new Error('Aucun appareil Tapo trouve dans le cloud');
-      }
-
-      this.device = await loginDevice(this.email, this.password, devices[0]);
+      this.device = await this.loginViaCloud();
       return this.device;
     } catch (error) {
       this.warnedError = true;

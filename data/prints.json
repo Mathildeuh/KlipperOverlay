@@ -2088,5 +2088,31 @@
     "energyEnd": {
       "ts": 1779990942919
     }
+  },
+  {
+    "id": "87e60c12-9f4c-40cf-aee5-4b78cb12be36",
+    "filename": "cable_holder_vcd_PLA Basic_4h37m.gcode",
+    "startedAt": 1782071081599,
+    "status": "completed",
+    "energyStart": {
+      "ts": 1782071081577
+    },
+    "filamentG": 51.98,
+    "costs": {
+      "electricityEur": 0,
+      "filamentEur": 1.04,
+      "wearEur": 0,
+      "totalEur": 1.04
+    },
+    "meta": {
+      "filename": "cable_holder_vcd_PLA Basic_4h37m.gcode",
+      "estimatedTimeSec": 16638,
+      "filamentWeightG": 51.98,
+      "filamentLengthMm": 17429.57
+    },
+    "endedAt": 1782071116668,
+    "energyEnd": {
+      "ts": 1782071116668
+    }
   }
 ]
